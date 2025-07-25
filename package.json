@@ -1,0 +1,20 @@
+{
+  "name": "client-ocr-app",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Client-side OCR processing app using Transformers.js",
+  "homepage": "https://siva-sub.github.io/client-ocr-app",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.5.2"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1",
+    "vite": "^5.0.0"
+  }
+}
