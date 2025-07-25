@@ -1,8 +1,8 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Client-side OCR processing app using Transformers.js - Extract text from images directly in your browser",
+  "description": "Client-side OCR processing app using Tesseract.js - Extract text from images and PDFs directly in your browser",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
   "repository": {
     "type": "git",
@@ -16,11 +16,14 @@
   "keywords": [
     "ocr",
     "optical-character-recognition",
-    "transformers.js",
+    "tesseract",
+    "tesseract.js",
     "client-side",
     "browser",
     "text-extraction",
-    "image-to-text"
+    "image-to-text",
+    "pdf-ocr",
+    "pdf-text-extraction"
   ],
   "scripts": {
     "dev": "vite",
@@ -29,7 +32,9 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
-    "onnxruntime-web": "^1.16.3"
+    "onnxruntime-web": "^1.22.0",
+    "pdfjs-dist": "^3.11.174",
+    "tesseract.js": "^5.0.4"
   },
   "devDependencies": {
     "gh-pages": "^6.1.1",

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PaddleOCR Web - Client-Side OCR</title>
+    <title>PP-OCR Web - Client-Side OCR with ONNX Runtime</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
     <div id="app">
         <header>
-            <h1>🔍 PaddleOCR Web</h1>
-            <p>Process images and extract text directly in your browser using PaddleOCR</p>
+            <h1>🔍 PP-OCR Web</h1>
+            <p>Process images and extract text using PaddleOCR v5 models with ONNX Runtime - 100% client-side!</p>
             <div id="status" class="status info">Initializing...</div>
         </header>
 
@@ -22,9 +22,9 @@
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    <p>Drop an image here or click to upload</p>
-                    <p class="file-types">Supports: JPG, PNG, WebP</p>
-                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <p>Drop an image or PDF here or click to upload</p>
+                    <p class="file-types">Supports: JPG, PNG, WebP, PDF</p>
+                    <input type="file" id="fileInput" accept="image/*,application/pdf" hidden>
                 </div>
             </section>
 

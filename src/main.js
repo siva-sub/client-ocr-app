@@ -1,4 +1,4 @@
-import { paddleOCR } from './paddle-ocr.js';
+import { ppOCREngine } from './ppocr-onnx-engine.js';
 import './style.css';
 
 // Global variables
@@ -19,19 +19,25 @@ const resetBtn = document.getElementById('resetBtn');
 
 // Initialize the app
 async function initializeApp() {
-    console.log('Initializing PaddleOCR...');
-    showStatus('Initializing PaddleOCR models...', 'info');
+    console.log('Initializing PP-OCR with ONNX Runtime...');
+    showStatus('Loading PP-OCR models...', 'info');
     
     try {
-        await paddleOCR.initialize((progress) => {
+        await ppOCREngine.initialize((progress) => {
             showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+            
+            // Update loading indicator if visible
+            const loadingText = document.querySelector('#loadingIndicator p');
+            if (loadingText && progress.progress !== undefined) {
+                loadingText.textContent = `${progress.message} (${progress.progress}%)`;
+            }
         });
         
-        console.log('PaddleOCR initialized successfully!');
+        console.log('PP-OCR loaded successfully!');
         setupEventListeners();
     } catch (error) {
-        console.error('Failed to initialize PaddleOCR:', error);
-        showError('Failed to initialize OCR. Please refresh the page.');
+        console.error('Failed to initialize OCR models:', error);
+        showError('Failed to load OCR models. Please check your internet connection and refresh the page.');
     }
 }
 
@@ -56,10 +62,10 @@ function setupEventListeners() {
 // File handling
 function handleFileSelect(event) {
     const file = event.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-        loadImage(file);
+    if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
+        loadFile(file);
     } else {
-        showError('Please select a valid image file');
+        showError('Please select a valid image or PDF file');
     }
 }
 
@@ -78,31 +84,59 @@ function handleDrop(event) {
     uploadArea.classList.remove('dragover');
     
     const file = event.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-        loadImage(file);
+    if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
+        loadFile(file);
     } else {
-        showError('Please drop a valid image file');
+        showError('Please drop a valid image or PDF file');
     }
 }
 
-// Load and display image
-async function loadImage(file) {
+// Load and display file
+async function loadFile(file) {
     // Store the file blob for processing
     currentImageBlob = file;
     
-    // Create object URL for preview
-    const objectUrl = URL.createObjectURL(file);
-    previewImage.src = objectUrl;
     previewSection.style.display = 'block';
     resultsSection.style.display = 'none';
     
-    // Clean up old object URLs
-    previewImage.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-    };
+    if (file.type === 'application/pdf') {
+        // For PDFs, show a placeholder
+        previewImage.style.display = 'none';
+        const pdfPlaceholder = document.createElement('div');
+        pdfPlaceholder.className = 'pdf-placeholder';
+        pdfPlaceholder.innerHTML = `
+            <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <p>PDF Document</p>
+            <p class="file-name">${file.name}</p>
+        `;
+        const previewContainer = previewImage.parentElement;
+        previewContainer.innerHTML = '';
+        previewContainer.appendChild(pdfPlaceholder);
+    } else {
+        // For images, show preview
+        const existingPlaceholder = document.querySelector('.pdf-placeholder');
+        if (existingPlaceholder) {
+            existingPlaceholder.remove();
+        }
+        previewImage.style.display = 'block';
+        
+        const objectUrl = URL.createObjectURL(file);
+        previewImage.src = objectUrl;
+        
+        // Clean up old object URLs
+        previewImage.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }
 }
 
-// Process image with PaddleOCR
+// Process image with PP-OCR
 async function processImage() {
     if (!currentImageBlob) {
         showError('Please upload an image first');
@@ -113,17 +147,24 @@ async function processImage() {
     loadingIndicator.style.display = 'flex';
     ocrResults.innerHTML = '';
     
+    // Update loading text
+    const loadingText = document.querySelector('#loadingIndicator p');
+    if (loadingText) {
+        loadingText.textContent = 'Processing image with PP-OCR...';
+    }
+    
     try {
-        console.log('Processing image with PaddleOCR...');
-        showStatus('Processing image with PaddleOCR...', 'info');
+        console.log('Processing image with PP-OCR...');
+        showStatus('Detecting and recognizing text...', 'info');
         
         const startTime = performance.now();
         
-        // Process with PaddleOCR
-        const results = await paddleOCR.process(currentImageBlob);
+        // Process with real OCR engine
+        const results = await ppOCREngine.process(currentImageBlob);
         
         const processingTime = performance.now() - startTime;
         console.log(`Processing completed in ${processingTime.toFixed(2)}ms`);
+        console.log('OCR Results:', results);
         
         // Display results
         loadingIndicator.style.display = 'none';
@@ -145,30 +186,80 @@ async function processImage() {
 
 // Display OCR results
 function displayResults(results, processingTime) {
-    const allText = results.map(r => r.text).join('\n');
+    // Check if results is from PDF (array of page results)
+    const isPDF = Array.isArray(results) && results[0]?.page !== undefined;
     
-    ocrResults.innerHTML = `
-        <div class="ocr-stats">
-            <p><strong>Processing Time:</strong> ${(processingTime / 1000).toFixed(2)}s</p>
-            <p><strong>Text Regions Found:</strong> ${results.length}</p>
-        </div>
-        <div class="text-result">
-            <h3>Extracted Text:</h3>
-            <div class="text-content" id="extractedText">${escapeHtml(allText || 'No text detected')}</div>
-        </div>
-        <div class="detection-results">
-            <h3>Detection Details:</h3>
-            <ul class="detection-list">
-                ${results.map((result, index) => `
-                    <li>
-                        <span class="detection-index">${index + 1}.</span>
-                        <span class="detection-text">${escapeHtml(result.text)}</span>
-                        <span class="detection-confidence">${(result.confidence * 100).toFixed(1)}%</span>
-                    </li>
-                `).join('')}
-            </ul>
-        </div>
-    `;
+    if (isPDF) {
+        // Handle PDF results
+        let allText = '';
+        let totalRegions = 0;
+        let detailsHTML = '';
+        
+        results.forEach(pageResult => {
+            const pageText = pageResult.results.map(r => r.text).join('\n');
+            allText += `\n--- Page ${pageResult.page} ---\n${pageText}\n`;
+            totalRegions += pageResult.results.length;
+            
+            detailsHTML += `
+                <div class="page-results">
+                    <h4>Page ${pageResult.page}</h4>
+                    <ul class="detection-list">
+                        ${pageResult.results.map((result, index) => `
+                            <li>
+                                <span class="detection-index">${index + 1}.</span>
+                                <span class="detection-text">${escapeHtml(result.text)}</span>
+                                <span class="detection-confidence">${(result.confidence * 100).toFixed(1)}%</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        });
+        
+        ocrResults.innerHTML = `
+            <div class="ocr-stats">
+                <p><strong>Processing Time:</strong> ${(processingTime / 1000).toFixed(2)}s</p>
+                <p><strong>Pages Processed:</strong> ${results.length}</p>
+                <p><strong>Total Text Regions:</strong> ${totalRegions}</p>
+                <p><strong>Model:</strong> PP-OCRv5</p>
+            </div>
+            <div class="text-result">
+                <h3>Extracted Text:</h3>
+                <div class="text-content" id="extractedText">${escapeHtml(allText || 'No text detected')}</div>
+            </div>
+            <div class="detection-results">
+                <h3>Detection Details by Page:</h3>
+                ${detailsHTML}
+            </div>
+        `;
+    } else {
+        // Handle image results
+        const allText = results.map(r => r.text).join('\n');
+        
+        ocrResults.innerHTML = `
+            <div class="ocr-stats">
+                <p><strong>Processing Time:</strong> ${(processingTime / 1000).toFixed(2)}s</p>
+                <p><strong>Text Regions Found:</strong> ${results.length}</p>
+                <p><strong>Model:</strong> PP-OCRv5</p>
+            </div>
+            <div class="text-result">
+                <h3>Extracted Text:</h3>
+                <div class="text-content" id="extractedText">${escapeHtml(allText || 'No text detected')}</div>
+            </div>
+            <div class="detection-results">
+                <h3>Detection Details:</h3>
+                <ul class="detection-list">
+                    ${results.map((result, index) => `
+                        <li>
+                            <span class="detection-index">${index + 1}.</span>
+                            <span class="detection-text">${escapeHtml(result.text)}</span>
+                            <span class="detection-confidence">${(result.confidence * 100).toFixed(1)}%</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    }
 }
 
 // Copy text to clipboard
@@ -193,7 +284,7 @@ function downloadText() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `paddleocr-result-${Date.now()}.txt`;
+        a.download = `pp-ocrv5-result-${Date.now()}.txt`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -217,6 +308,8 @@ function escapeHtml(text) {
 }
 
 function showError(message) {
+    showStatus(message, 'error');
+    
     // Create toast notification
     const toast = document.createElement('div');
     toast.className = 'toast error';
@@ -225,7 +318,7 @@ function showError(message) {
     
     setTimeout(() => {
         toast.remove();
-    }, 3000);
+    }, 5000);
 }
 
 function showSuccess(message) {

@@ -12,6 +12,9 @@ export default defineConfig({
     open: true
   },
   optimizeDeps: {
-    exclude: ['@huggingface/transformers']
+    include: ['onnxruntime-web', 'pdfjs-dist']
+  },
+  worker: {
+    format: 'es'
   }
 })
