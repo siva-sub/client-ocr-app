@@ -1,6 +1,6 @@
-# Client-Side OCR App
+# Client-Side OCR App with PaddleOCR
 
-A modern, client-side OCR (Optical Character Recognition) application that runs entirely in your browser using Transformers.js.
+A modern, client-side OCR (Optical Character Recognition) application that runs entirely in your browser using PaddleOCR WebAssembly implementation.
 
 🔗 **Live Demo**: [https://siva-sub.github.io/client-ocr-app](https://siva-sub.github.io/client-ocr-app)
 
@@ -16,8 +16,9 @@ A modern, client-side OCR (Optical Character Recognition) application that runs 
 ## Technology Stack
 
 - **Vite** - Lightning fast build tool
-- **Transformers.js** - Run transformer models directly in the browser
-- **TrOCR** - State-of-the-art OCR model from Microsoft
+- **PaddleOCR** - Industry-leading OCR technology adapted for browser
+- **ONNX Runtime Web** - High-performance inference in the browser
+- **WebAssembly** - Near-native performance for OCR processing
 - **GitHub Pages** - Free hosting for static sites
 
 ## Getting Started
@@ -107,8 +108,10 @@ client-ocr-app/
 ### Key Components
 
 - **Image Upload**: Drag-and-drop or click to upload
-- **OCR Pipeline**: Uses Transformers.js with TrOCR model
-- **Results Display**: Shows extracted text with copy/download options
+- **OCR Pipeline**: Uses PaddleOCR with WebAssembly for fast processing
+- **Text Detection**: Identifies text regions in images
+- **Text Recognition**: Extracts text from detected regions
+- **Results Display**: Shows extracted text with confidence scores
 
 ## Contributing
 
@@ -126,6 +129,6 @@ MIT License
 
 ## Acknowledgments
 
-- [Hugging Face](https://huggingface.co/) for Transformers.js
-- [Microsoft](https://github.com/microsoft/unilm/tree/master/trocr) for TrOCR model
+- [PaddlePaddle](https://github.com/PaddlePaddle/PaddleOCR) for the OCR technology
+- [ONNX Runtime](https://onnxruntime.ai/) for WebAssembly inference
 - [Vite](https://vitejs.dev/) for the amazing build tool

@@ -1,6 +1,6 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Client-side OCR processing app using Transformers.js - Extract text from images directly in your browser",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
@@ -29,7 +29,8 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.5.2"
+    "onnxruntime-web": "^1.16.3",
+    "opencv-js": "^1.2.1"
   },
   "devDependencies": {
     "gh-pages": "^6.1.1",

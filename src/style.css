@@ -33,6 +33,36 @@ header h1 {
 header p {
     opacity: 0.9;
     font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.status.info {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.status.success {
+    background: rgba(76, 175, 80, 0.3);
+    color: white;
+}
+
+.status.warning {
+    background: rgba(255, 152, 0, 0.3);
+    color: white;
+}
+
+.status.error {
+    background: rgba(244, 67, 54, 0.3);
+    color: white;
 }
 
 main {
@@ -179,6 +209,70 @@ main {
     word-wrap: break-word;
     line-height: 1.8;
     color: #333;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: white;
+    border-radius: 4px;
+}
+
+.ocr-stats {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #e3f2fd;
+    border-radius: 4px;
+}
+
+.ocr-stats p {
+    margin: 0;
+    color: #1976d2;
+}
+
+.detection-results {
+    margin-top: 2rem;
+}
+
+.detection-results h3 {
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.detection-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detection-list li {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    border-left: 3px solid #667eea;
+}
+
+.detection-index {
+    font-weight: bold;
+    color: #667eea;
+    margin-right: 1rem;
+    min-width: 30px;
+}
+
+.detection-text {
+    flex: 1;
+    color: #333;
+}
+
+.detection-confidence {
+    font-size: 0.9rem;
+    color: #666;
+    background: #e0e0e0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
 }
 
 .actions {

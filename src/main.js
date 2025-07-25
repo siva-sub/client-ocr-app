@@ -1,14 +1,8 @@
-import { pipeline, env } from '@huggingface/transformers';
+import { paddleOCR } from './paddle-ocr.js';
 import './style.css';
 
-// Configure environment for client-side processing
-env.allowLocalModels = false;
-env.allowRemoteModels = true;
-env.remoteURL = 'https://huggingface.co/';
-
 // Global variables
-let imageToTextPipeline = null;
-let currentImageData = null;
+let currentImageBlob = null;
 
 // DOM elements
 const fileInput = document.getElementById('fileInput');
@@ -25,16 +19,18 @@ const resetBtn = document.getElementById('resetBtn');
 
 // Initialize the app
 async function initializeApp() {
-    console.log('Initializing OCR pipeline...');
+    console.log('Initializing PaddleOCR...');
+    showStatus('Initializing PaddleOCR models...', 'info');
     
     try {
-        // Create image-to-text pipeline
-        imageToTextPipeline = await pipeline('image-to-text', 'Xenova/trocr-base-handwritten');
-        console.log('OCR pipeline ready!');
+        await paddleOCR.initialize((progress) => {
+            showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+        });
         
+        console.log('PaddleOCR initialized successfully!');
         setupEventListeners();
     } catch (error) {
-        console.error('Failed to initialize pipeline:', error);
+        console.error('Failed to initialize PaddleOCR:', error);
         showError('Failed to initialize OCR. Please refresh the page.');
     }
 }
@@ -90,22 +86,25 @@ function handleDrop(event) {
 }
 
 // Load and display image
-function loadImage(file) {
-    const reader = new FileReader();
+async function loadImage(file) {
+    // Store the file blob for processing
+    currentImageBlob = file;
     
-    reader.onload = (e) => {
-        currentImageData = e.target.result;
-        previewImage.src = currentImageData;
-        previewSection.style.display = 'block';
-        resultsSection.style.display = 'none';
+    // Create object URL for preview
+    const objectUrl = URL.createObjectURL(file);
+    previewImage.src = objectUrl;
+    previewSection.style.display = 'block';
+    resultsSection.style.display = 'none';
+    
+    // Clean up old object URLs
+    previewImage.onload = () => {
+        URL.revokeObjectURL(objectUrl);
     };
-    
-    reader.readAsDataURL(file);
 }
 
-// Process image with OCR
+// Process image with PaddleOCR
 async function processImage() {
-    if (!currentImageData || !imageToTextPipeline) {
+    if (!currentImageBlob) {
         showError('Please upload an image first');
         return;
     }
@@ -115,21 +114,26 @@ async function processImage() {
     ocrResults.innerHTML = '';
     
     try {
-        console.log('Processing image...');
+        console.log('Processing image with PaddleOCR...');
+        showStatus('Processing image with PaddleOCR...', 'info');
         
-        // Run OCR
-        const result = await imageToTextPipeline(currentImageData);
+        const startTime = performance.now();
         
-        console.log('OCR result:', result);
+        // Process with PaddleOCR
+        const results = await paddleOCR.process(currentImageBlob);
+        
+        const processingTime = performance.now() - startTime;
+        console.log(`Processing completed in ${processingTime.toFixed(2)}ms`);
         
         // Display results
         loadingIndicator.style.display = 'none';
         
-        if (result && result.length > 0) {
-            const text = result[0].generated_text || 'No text detected';
-            displayResults(text);
+        if (results && results.length > 0) {
+            displayResults(results, processingTime);
+            showStatus(`Text extraction complete! Found ${results.length} text regions.`, 'success');
         } else {
-            displayResults('No text detected in the image');
+            displayResults([]);
+            showStatus('No text found in the image', 'warning');
         }
         
     } catch (error) {
@@ -140,11 +144,29 @@ async function processImage() {
 }
 
 // Display OCR results
-function displayResults(text) {
+function displayResults(results, processingTime) {
+    const allText = results.map(r => r.text).join('\n');
+    
     ocrResults.innerHTML = `
+        <div class="ocr-stats">
+            <p><strong>Processing Time:</strong> ${(processingTime / 1000).toFixed(2)}s</p>
+            <p><strong>Text Regions Found:</strong> ${results.length}</p>
+        </div>
         <div class="text-result">
             <h3>Extracted Text:</h3>
-            <div class="text-content" id="extractedText">${escapeHtml(text)}</div>
+            <div class="text-content" id="extractedText">${escapeHtml(allText || 'No text detected')}</div>
+        </div>
+        <div class="detection-results">
+            <h3>Detection Details:</h3>
+            <ul class="detection-list">
+                ${results.map((result, index) => `
+                    <li>
+                        <span class="detection-index">${index + 1}.</span>
+                        <span class="detection-text">${escapeHtml(result.text)}</span>
+                        <span class="detection-confidence">${(result.confidence * 100).toFixed(1)}%</span>
+                    </li>
+                `).join('')}
+            </ul>
         </div>
     `;
 }
@@ -171,7 +193,7 @@ function downloadText() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ocr-result-${Date.now()}.txt`;
+        a.download = `paddleocr-result-${Date.now()}.txt`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -180,10 +202,11 @@ function downloadText() {
 // Reset the app
 function reset() {
     fileInput.value = '';
-    currentImageData = null;
+    currentImageBlob = null;
     previewSection.style.display = 'none';
     resultsSection.style.display = 'none';
     ocrResults.innerHTML = '';
+    showStatus('Ready to process a new image', 'info');
 }
 
 // Utility functions
@@ -215,6 +238,17 @@ function showSuccess(message) {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+function showStatus(message, type = 'info') {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    
+    // Update status in UI
+    const statusElement = document.getElementById('status');
+    if (statusElement) {
+        statusElement.textContent = message;
+        statusElement.className = `status ${type}`;
+    }
 }
 
 // Initialize when DOM is loaded
