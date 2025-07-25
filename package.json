@@ -1,9 +1,27 @@
 {
-  "name": "client-ocr-app",
+  "name": "@siva-sub/client-ocr-app",
   "version": "0.1.0",
   "type": "module",
-  "description": "Client-side OCR processing app using Transformers.js",
+  "description": "Client-side OCR processing app using Transformers.js - Extract text from images directly in your browser",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siva-sub/client-ocr-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/siva-sub/client-ocr-app/issues"
+  },
+  "author": "Siva Sub <sivasub987@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "ocr",
+    "optical-character-recognition",
+    "transformers.js",
+    "client-side",
+    "browser",
+    "text-extraction",
+    "image-to-text"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
