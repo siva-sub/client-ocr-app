@@ -16,12 +16,14 @@ const MODELS = {
         name: 'PP-OCRv5 Mobile Detection'
     },
     recognition: {
-        path: MODEL_BASE + 'PP-OCRv5_mobile_rec_infer.onnx',
-        name: 'PP-OCRv5 Mobile Recognition'
+        // Use PP-OCRv4 English model for better English recognition
+        path: MODEL_BASE + 'en_PP-OCRv4_mobile_rec_infer.onnx',
+        name: 'PP-OCRv4 English Recognition'
     },
     dictionary: {
-        path: MODEL_BASE + 'ppocrv5_dict.txt',
-        name: 'PP-OCRv5 Dictionary'
+        // Use English dictionary for PP-OCRv4
+        path: MODEL_BASE + 'en_dict.txt',
+        name: 'English Dictionary'
     }
 };
 
@@ -30,15 +32,15 @@ const CONFIG = {
     // Detection parameters
     det_limit_side_len: 960,
     det_limit_type: 'max',
-    det_db_thresh: 0.3,
-    det_db_box_thresh: 0.6,
-    det_db_unclip_ratio: 1.5,
+    det_db_thresh: 0.3,      // Threshold for detection probability map
+    det_db_box_thresh: 0.5,   // Lowered from 0.6 for more detections
+    det_db_unclip_ratio: 1.6, // Slightly increased for better text coverage
     
     // Recognition parameters
     rec_batch_num: 6,
-    drop_score: 0.5,
+    drop_score: 0.3,          // Lowered from 0.5 to keep more results
     
-    // Image preprocessing
+    // Image preprocessing (ImageNet normalization)
     mean: [0.485, 0.456, 0.406],
     std: [0.229, 0.224, 0.225]
 };
@@ -62,7 +64,7 @@ export class PPOCREngine {
             this.ctx = this.canvas.getContext('2d');
 
             // Load dictionary
-            progressCallback?.({ status: 'loading', message: 'Loading PP-OCRv5 dictionary...', progress: 10 });
+            progressCallback?.({ status: 'loading', message: 'Loading English dictionary...', progress: 10 });
             await this.loadDictionary();
 
             // Load detection model
@@ -74,7 +76,7 @@ export class PPOCREngine {
             console.log('Detection model loaded:', this.detectionSession.inputNames, this.detectionSession.outputNames);
 
             // Load recognition model
-            progressCallback?.({ status: 'loading', message: 'Loading PP-OCRv5 recognition model...', progress: 70 });
+            progressCallback?.({ status: 'loading', message: 'Loading PP-OCRv4 English recognition model...', progress: 70 });
             this.recognitionSession = await ort.InferenceSession.create(MODELS.recognition.path, {
                 executionProviders: ['wasm'],
                 graphOptimizationLevel: 'all'
