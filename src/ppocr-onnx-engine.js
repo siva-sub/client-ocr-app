@@ -2,10 +2,11 @@ import * as ort from 'onnxruntime-web';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/client-ocr-app/pdf.worker.min.js';
 
-// Configure ONNX Runtime
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/';
+// Configure ONNX Runtime to use the bundled WASM files
+ort.env.wasm.wasmPaths = '/client-ocr-app/assets/';
+ort.env.wasm.numThreads = 1;  // Disable multi-threading to avoid CORS issues
 
 // Model paths - will be served from your GitHub Pages
 const MODEL_BASE = '/client-ocr-app/models/';
