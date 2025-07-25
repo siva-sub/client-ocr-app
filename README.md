@@ -8,9 +8,10 @@ A browser-based OCR (Optical Character Recognition) application powered by Paddl
 
 - 🚀 **100% Client-Side**: All processing happens in your browser using WebAssembly
 - 🔒 **Privacy-First**: Your images and PDFs never leave your device
-- ⚡ **PP-OCRv5 Models**: State-of-the-art text detection using PaddleOCR v5
-- 📄 **PDF Support**: Extract text from multi-page PDF documents
-- 🌍 **English Optimized**: Using PP-OCRv4 English recognition model
+- ⚡ **PP-OCRv5 Models**: Latest PaddleOCR v5 models for both detection and recognition
+- 📄 **PDF Support**: Extract text from multi-page PDF documents with visual preview
+- 🖼️ **PDF Preview**: See thumbnails of PDF pages before processing
+- 🌍 **Multilingual Support**: PP-OCRv5 supports 80+ languages
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 - 🎯 **Easy to Use**: Simple drag-and-drop interface
 - 💾 **Export Options**: Copy text or download as file
@@ -28,10 +29,21 @@ A browser-based OCR (Optical Character Recognition) application powered by Paddl
 ## Models Used
 
 - **Detection**: PP-OCRv5_mobile_det_infer.onnx (4.7MB)
-- **Recognition**: en_PP-OCRv4_mobile_rec_infer.onnx (7.4MB)
-- **Dictionary**: English character dictionary
+- **Recognition**: PP-OCRv5_mobile_rec_infer.onnx (15.8MB)
+- **Dictionary**: PP-OCRv5 multilingual dictionary (supports 80+ languages)
 
-Models are served directly from GitHub Pages for fast loading.
+Models are from the [paddleocr.js](https://github.com/X3ZvaWQ/paddleocr.js) project and served directly from GitHub Pages.
+
+## PDF-Extract-Kit Integration
+
+The project includes Python scripts from [PDF-Extract-Kit](https://github.com/opendatalab/PDF-Extract-Kit) for advanced PDF processing:
+
+- **Table Parsing**: Extract and parse tables from PDFs
+- **Layout Detection**: Analyze document structure and layout
+- **Formula Detection**: Detect mathematical formulas
+- **Formula Recognition**: Extract and recognize mathematical expressions
+
+Note: These scripts require server-side execution and are included for future integration.
 
 ## Getting Started
 

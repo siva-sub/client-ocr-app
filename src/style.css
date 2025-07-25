@@ -317,6 +317,62 @@ main {
     font-size: 1.1em;
 }
 
+/* PDF Preview */
+.pdf-preview {
+    width: 100%;
+    padding: 1rem;
+}
+
+.pdf-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.pdf-header h3 {
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    word-break: break-word;
+}
+
+.pdf-info {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pdf-pages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.pdf-page-preview {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.5rem;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-page-preview p {
+    margin: 0 0 0.5rem 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.pdf-page-preview canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.more-pages {
+    color: #666;
+    font-style: italic;
+    margin-top: 1rem;
+}
+
 .actions {
     display: flex;
     gap: 1rem;

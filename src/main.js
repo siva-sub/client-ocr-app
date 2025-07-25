@@ -1,5 +1,9 @@
 import { ppOCREngine } from './ppocr-onnx-engine.js';
+import * as pdfjsLib from 'pdfjs-dist';
 import './style.css';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/client-ocr-app/pdf.worker.min.js';
 
 // Global variables
 let currentImageBlob = null;
@@ -100,24 +104,68 @@ async function loadFile(file) {
     resultsSection.style.display = 'none';
     
     if (file.type === 'application/pdf') {
-        // For PDFs, show a placeholder
+        // For PDFs, render the first page as preview
         previewImage.style.display = 'none';
-        const pdfPlaceholder = document.createElement('div');
-        pdfPlaceholder.className = 'pdf-placeholder';
-        pdfPlaceholder.innerHTML = `
-            <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            <p>PDF Document</p>
-            <p class="file-name">${file.name}</p>
-        `;
         const previewContainer = previewImage.parentElement;
         previewContainer.innerHTML = '';
-        previewContainer.appendChild(pdfPlaceholder);
+        
+        // Create PDF preview container
+        const pdfPreview = document.createElement('div');
+        pdfPreview.className = 'pdf-preview';
+        pdfPreview.innerHTML = `
+            <div class="pdf-header">
+                <h3>${file.name}</h3>
+                <p class="pdf-info">Loading PDF preview...</p>
+            </div>
+            <div class="pdf-pages" id="pdfPages"></div>
+        `;
+        previewContainer.appendChild(pdfPreview);
+        
+        // Load and render PDF preview
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const numPages = pdf.numPages;
+            
+            const pdfInfo = pdfPreview.querySelector('.pdf-info');
+            pdfInfo.textContent = `${numPages} page${numPages > 1 ? 's' : ''}`;
+            
+            const pagesContainer = document.getElementById('pdfPages');
+            
+            // Render first few pages as preview (max 3)
+            const pagesToRender = Math.min(numPages, 3);
+            
+            for (let pageNum = 1; pageNum <= pagesToRender; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 0.5 });
+                
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'pdf-page-preview';
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                await page.render(renderContext).promise;
+                
+                pageDiv.innerHTML = `<p>Page ${pageNum}</p>`;
+                pageDiv.appendChild(canvas);
+                pagesContainer.appendChild(pageDiv);
+            }
+            
+            if (numPages > 3) {
+                pagesContainer.innerHTML += `<p class="more-pages">... and ${numPages - 3} more pages</p>`;
+            }
+        } catch (error) {
+            console.error('Error rendering PDF preview:', error);
+            pdfPreview.querySelector('.pdf-info').textContent = 'Error loading PDF preview';
+        }
     } else {
         // For images, show preview
         const existingPlaceholder = document.querySelector('.pdf-placeholder');
