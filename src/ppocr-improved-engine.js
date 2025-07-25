@@ -180,14 +180,20 @@ export class PPOCRImprovedEngine {
 
         try {
             // Resize image for detection
+            console.log('Starting image resize...');
             const { resizedImage, ratio } = await this.resizeForDetection(imageData);
+            console.log('Image resized, ratio:', ratio);
             
             // Preprocess for detection
+            console.log('Starting preprocessing...');
             const inputTensor = await this.preprocessForDetection(resizedImage);
+            console.log('Preprocessing complete, tensor shape:', inputTensor.dims);
             
             // Run detection
+            console.log('Running detection model...');
             const feeds = { [this.detectionSession.inputNames[0]]: inputTensor };
             const output = await this.detectionSession.run(feeds);
+            console.log('Detection complete');
             
             // Post-process detection results
             const boxes = await this.postprocessDetection(
@@ -201,6 +207,12 @@ export class PPOCRImprovedEngine {
             return this.sortBoxes(boxes);
         } catch (error) {
             console.error('Error in detectText:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+                code: error.code
+            });
             // Return empty array instead of throwing to allow partial results
             return [];
         }
@@ -325,10 +337,28 @@ export class PPOCRImprovedEngine {
 
     async postprocessDetection(outputTensor, imgWidth, imgHeight, ratio) {
         try {
-            const [batchSize, channels, height, width] = outputTensor.dims;
-            const data = outputTensor.data;
+            // PP-OCRv5 might have different output format
+            let height, width, data;
+            
+            if (outputTensor.dims.length === 4) {
+                // Standard format: [batch, channels, height, width]
+                const [batchSize, channels, h, w] = outputTensor.dims;
+                height = h;
+                width = w;
+                data = outputTensor.data;
+            } else if (outputTensor.dims.length === 3) {
+                // Alternative format: [batch, height, width]
+                const [batchSize, h, w] = outputTensor.dims;
+                height = h;
+                width = w;
+                data = outputTensor.data;
+            } else {
+                throw new Error(`Unexpected output tensor dimensions: ${outputTensor.dims}`);
+            }
             
             console.log(`Detection output shape: ${height}x${width}, total pixels: ${height * width}`);
+            console.log('Output tensor dims:', outputTensor.dims);
+            console.log('Data length:', data.length);
             
             // Convert to probability map
             const probMap = new Float32Array(height * width);
