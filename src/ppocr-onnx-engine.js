@@ -54,9 +54,9 @@ export class PPOCREngine {
         this.canvas = null;
         this.ctx = null;
         this.modelConfig = {
-            detection: 'PP-OCRv5_mobile_det_infer.onnx',  // PP-OCRv5 mobile detection
-            recognition: 'en_PP-OCRv4_mobile_rec_infer.onnx',  // English-specific model
-            dictionary: 'en_dict.txt'  // English dictionary
+            detection: 'PP-OCRv5_server_det_infer.onnx',  // PP-OCRv5 server detection - 83.8% accuracy
+            recognition: 'PP-OCRv5_server_rec_infer.onnx',  // PP-OCRv5 server recognition - 86.38% accuracy
+            dictionary: 'ppocr_keys_v1.txt'  // PP-OCRv5 uses unified dictionary
         };
     }
 

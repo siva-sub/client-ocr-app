@@ -58,14 +58,16 @@
                     <div class="model-selection">
                         <label for="detectionModel">Detection Model:</label>
                         <select id="detectionModel">
-                            <option value="PP-OCRv5_mobile_det_infer.onnx" selected>PP-OCRv5 Mobile (4.7MB)</option>
+                            <option value="PP-OCRv5_mobile_det_infer.onnx">PP-OCRv5 Mobile (4.7MB)</option>
+                            <option value="PP-OCRv5_server_det_infer.onnx" selected>PP-OCRv5 Server (84.3MB) - 83.8% Accuracy</option>
                         </select>
                     </div>
                     <div class="model-selection">
                         <label for="recognitionModel">Recognition Model:</label>
                         <select id="recognitionModel">
-                            <option value="en_PP-OCRv4_mobile_rec_infer.onnx" selected>PP-OCRv4 English (7.4MB)</option>
-                            <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Multilingual (16MB)</option>
+                            <option value="en_PP-OCRv4_mobile_rec_infer.onnx">PP-OCRv4 English (7.4MB)</option>
+                            <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Mobile (16MB)</option>
+                            <option value="PP-OCRv5_server_rec_infer.onnx" selected>PP-OCRv5 Server (81MB) - 86.38% Accuracy</option>
                         </select>
                     </div>
                     <div class="model-selection">
@@ -118,6 +120,7 @@
         <footer>
             <p>Created by <a href="https://github.com/siva-sub" target="_blank">Siva Sub</a> | 
                <a href="https://www.linkedin.com/in/sivasub987" target="_blank">LinkedIn</a></p>
+            <p class="acknowledgment">Special thanks to <a href="https://huggingface.co/spaces/SWHL/PaddleOCRModelConverter" target="_blank">SWHL's PaddleOCR Model Converter</a> for enabling ONNX model conversion</p>
         </footer>
     </div>
 

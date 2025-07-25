@@ -28,8 +28,8 @@ A browser-based OCR (Optical Character Recognition) application powered by Paddl
 
 ## Models Used
 
-- **Detection**: PP-OCRv5_mobile_det_infer.onnx (4.7MB)
-- **Recognition**: PP-OCRv5_mobile_rec_infer.onnx (15.8MB)
+- **Detection**: PP-OCRv5_server_det_infer.onnx (84.3MB) - 83.8% accuracy
+- **Recognition**: PP-OCRv5_server_rec_infer.onnx (81MB) - 86.38% accuracy
 - **Dictionary**: PP-OCRv5 multilingual dictionary (supports 80+ languages)
 
 Models are from the [paddleocr.js](https://github.com/X3ZvaWQ/paddleocr.js) project and served directly from GitHub Pages.
@@ -174,9 +174,11 @@ client-ocr-app/
 │   └── style.css                 # Styles
 ├── public/
 │   └── models/                   # ONNX model files
+│       ├── PP-OCRv5_server_det_infer.onnx
+│       ├── PP-OCRv5_server_rec_infer.onnx
 │       ├── PP-OCRv5_mobile_det_infer.onnx
 │       ├── en_PP-OCRv4_mobile_rec_infer.onnx
-│       └── en_dict.txt
+│       └── ppocr_keys_v1.txt
 ├── index.html                    # Entry HTML file
 ├── vite.config.js               # Vite configuration
 └── package.json                 # Project metadata
@@ -232,16 +234,18 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Model Information
 
-### PP-OCRv5 Detection Model
-- Architecture: DBNet with MobileNetV3 backbone
+### PP-OCRv5 Server Detection Model
+- Architecture: DBNet with ResNet backbone
 - Input size: Dynamic (resized to multiple of 32)
 - Output: Probability map of text regions
+- Accuracy: 83.8% on multilingual dataset
 
-### PP-OCRv4 Recognition Model
-- Architecture: CRNN with MobileNetV3 backbone
+### PP-OCRv5 Server Recognition Model
+- Architecture: SVTR with enhanced backbone
 - Input size: Fixed height 48px, variable width
 - Output: Character sequence probabilities
-- Language: English
+- Languages: 80+ languages including English, Chinese, Japanese
+- Accuracy: 86.38% on Chinese dataset
 
 ## License
 
@@ -256,8 +260,10 @@ MIT License - see LICENSE file for details
 ## Acknowledgments
 
 - [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for the amazing OCR models
+- **Special thanks to [SWHL's PaddleOCR Model Converter](https://huggingface.co/spaces/SWHL/PaddleOCRModelConverter)** for the excellent tool that enabled converting PP-OCRv5 server models to ONNX format
 - [ONNX Runtime](https://onnxruntime.ai/) for WebAssembly inference
-- [PT-Perkasa-Pilar-Utama](https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr) for ONNX model conversions
+- [PT-Perkasa-Pilar-Utama](https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr) for preprocessing implementations
+- [RapidOCR](https://github.com/RapidAI/RapidOCR) for optimization techniques
 - [PDF.js](https://mozilla.github.io/pdf.js/) for PDF rendering
 - [Vite](https://vitejs.dev/) for the blazing fast build tool
 
