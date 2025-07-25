@@ -11,23 +11,23 @@ ort.env.wasm.numThreads = 1;
 // Model paths
 const MODEL_BASE = '/client-ocr-app/models/';
 
-// Improved configuration based on RapidOCR and ppu-paddle-ocr - optimized for English
+// Improved configuration based on RapidOCR and ppu-paddle-ocr - optimized for better detection
 const CONFIG = {
-    // Detection parameters (optimized for English text)
-    det_limit_side_len: 960,     // Increased for better detail on English documents
+    // Detection parameters (lower thresholds for better detection)
+    det_limit_side_len: 960,     // Good resolution for detail
     det_limit_type: 'max',       // Use 'max' for consistent sizing
-    det_db_thresh: 0.25,         // Lower threshold for better English character detection
-    det_db_box_thresh: 0.6,      // Balanced threshold for English text
-    det_db_unclip_ratio: 1.8,    // Slightly reduced for tighter English text boxes
+    det_db_thresh: 0.1,          // Much lower threshold for better detection
+    det_db_box_thresh: 0.3,      // Lower box threshold to detect more text
+    det_db_unclip_ratio: 2.0,    // Higher ratio for better text coverage
     det_db_min_size: 3,
     det_db_max_candidates: 1000,  // Limit candidates to prevent overflow
-    det_use_dilation: false,     // Can enable for better text connectivity
+    det_use_dilation: true,      // Enable for better text connectivity
     
-    // Recognition parameters (optimized for English)
+    // Recognition parameters (lower thresholds)
     rec_image_height: 48,
     rec_image_width: 320,        // Dynamic width calculation
     rec_batch_num: 6,
-    drop_score: 0.4,             // Lower threshold to keep more English results
+    drop_score: 0.1,             // Much lower threshold to keep more results
     
     // Preprocessing parameters (PP-OCRv5 style)
     det_mean: [0.485, 0.456, 0.406],
@@ -36,14 +36,14 @@ const CONFIG = {
     rec_std: 0.5,
     
     // Area thresholds
-    min_area_thresh: 10,
+    min_area_thresh: 5,          // Lower area threshold
     
-    // Text line merging (optimized for English)
-    vertical_gap_threshold: 0.3,  // Tighter for English text lines
+    // Text line merging
+    vertical_gap_threshold: 0.5,  // Standard gap threshold
     
     // English-specific optimizations
     english_mode: true,
-    min_word_confidence: 0.6,    // Confidence threshold for English words
+    min_word_confidence: 0.3,    // Much lower confidence threshold
     enable_word_splitting: true   // Split connected words in English
 };
 
@@ -56,8 +56,8 @@ export class PPOCRImprovedEngine {
         this.canvas = null;
         this.ctx = null;
         this.modelConfig = {
-            detection: 'PP-OCRv5_server_det_infer.onnx',  // PP-OCRv5 server detection - 83.8% accuracy
-            recognition: 'PP-OCRv5_server_rec_infer.onnx',  // PP-OCRv5 server recognition - 86.38% accuracy
+            detection: 'PP-OCRv5_mobile_det_infer.onnx',  // PP-OCRv5 mobile detection
+            recognition: 'PP-OCRv5_mobile_rec_infer.onnx',  // PP-OCRv5 mobile recognition
             dictionary: 'ppocr_keys_v1.txt'  // PP-OCRv5 uses unified dictionary
         };
     }
@@ -220,12 +220,8 @@ export class PPOCRImprovedEngine {
         const targetW = Math.round(newW / 32) * 32;
         const targetH = Math.round(newH / 32) * 32;
         
-        // Resize image
-        this.canvas.width = targetW;
-        this.canvas.height = targetH;
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillRect(0, 0, targetW, targetH);
-        this.ctx.drawImage(imageData, 0, 0, newW, newH);
+        // Apply preprocessing to improve image quality
+        const preprocessedImage = await this.preprocessImage(imageData, targetW, targetH);
         
         const resizedImage = new Image();
         return new Promise((resolve) => {
@@ -238,6 +234,55 @@ export class PPOCRImprovedEngine {
                 resizedImage.src = url;
             });
         });
+    }
+    
+    async preprocessImage(imageData, targetW, targetH) {
+        // Resize image
+        this.canvas.width = targetW;
+        this.canvas.height = targetH;
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(0, 0, targetW, targetH);
+        
+        // Enable image smoothing for better quality
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
+        
+        // Draw with proper scaling
+        const scale = Math.min(targetW / imageData.width, targetH / imageData.height);
+        const scaledW = imageData.width * scale;
+        const scaledH = imageData.height * scale;
+        const offsetX = (targetW - scaledW) / 2;
+        const offsetY = (targetH - scaledH) / 2;
+        
+        this.ctx.drawImage(imageData, offsetX, offsetY, scaledW, scaledH);
+        
+        // Apply contrast enhancement
+        const imgData = this.ctx.getImageData(0, 0, targetW, targetH);
+        const pixels = imgData.data;
+        
+        // Enhance contrast and convert to grayscale
+        for (let i = 0; i < pixels.length; i += 4) {
+            // Convert to grayscale
+            const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+            
+            // Apply contrast enhancement
+            let enhanced = ((gray - 128) * 1.5) + 128;
+            enhanced = Math.max(0, Math.min(255, enhanced));
+            
+            // Apply slight sharpening
+            if (enhanced > 200) {
+                enhanced = 255; // Make light pixels white
+            } else if (enhanced < 50) {
+                enhanced = 0;   // Make dark pixels black
+            }
+            
+            pixels[i] = enhanced;
+            pixels[i + 1] = enhanced;
+            pixels[i + 2] = enhanced;
+        }
+        
+        this.ctx.putImageData(imgData, 0, 0);
+        return this.canvas;
     }
 
     async preprocessForDetection(imageData) {
@@ -730,18 +775,17 @@ export class PPOCRImprovedEngine {
     }
 
     filterResults(results) {
-        // Filter out low confidence results - optimized for English
-        const textScoreThreshold = CONFIG.english_mode ? 0.4 : 0.5; // Lower threshold for English
+        // Filter out low confidence results - much lower threshold
+        const textScoreThreshold = CONFIG.drop_score; // Use the configured drop score
         return results.filter(result => {
-            // Additional English-specific filtering
-            if (CONFIG.english_mode) {
-                // Check if text contains mostly valid English characters
-                const englishCharRatio = (result.text.match(/[a-zA-Z0-9\s.,!?;:'"()-]/g) || []).length / result.text.length;
-                if (englishCharRatio < 0.7 && result.confidence < 0.6) {
-                    return false; // Reject low-confidence non-English text
-                }
+            // Keep results with any reasonable confidence
+            if (result.confidence < textScoreThreshold) {
+                return false;
             }
-            return result.confidence >= textScoreThreshold && result.text.trim().length > 0;
+            
+            // Keep any text that has at least one alphanumeric character
+            const hasAlphanumeric = /[a-zA-Z0-9]/.test(result.text);
+            return hasAlphanumeric && result.text.trim().length > 0;
         });
     }
 

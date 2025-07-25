@@ -27,18 +27,18 @@ const MODELS = {
     }
 };
 
-// OCR configuration - optimized for English with PP-OCRv5
+// OCR configuration - optimized with lower thresholds
 const CONFIG = {
     // Detection parameters
     det_limit_side_len: 960,
     det_limit_type: 'max',
-    det_db_thresh: 0.25,      // Lower threshold for better English detection
-    det_db_box_thresh: 0.45,  // Optimized for English text
-    det_db_unclip_ratio: 1.8, // Better coverage for English characters
+    det_db_thresh: 0.1,       // Much lower threshold for better detection
+    det_db_box_thresh: 0.3,   // Lower box threshold
+    det_db_unclip_ratio: 2.0, // Higher coverage
     
     // Recognition parameters
     rec_batch_num: 6,
-    drop_score: 0.25,         // Lower threshold for English text
+    drop_score: 0.1,          // Very low threshold to keep more text
     
     // Image preprocessing (ImageNet normalization)
     mean: [0.485, 0.456, 0.406],
@@ -54,9 +54,9 @@ export class PPOCREngine {
         this.canvas = null;
         this.ctx = null;
         this.modelConfig = {
-            detection: 'PP-OCRv5_server_det_infer.onnx',  // PP-OCRv5 server detection - 83.8% accuracy
-            recognition: 'PP-OCRv5_server_rec_infer.onnx',  // PP-OCRv5 server recognition - 86.38% accuracy
-            dictionary: 'ppocr_keys_v1.txt'  // PP-OCRv5 uses unified dictionary
+            detection: 'PP-OCRv5_mobile_det_infer.onnx',  // PP-OCRv5 mobile detection
+            recognition: 'en_PP-OCRv4_mobile_rec_infer.onnx',  // English-specific model
+            dictionary: 'en_dict.txt'  // English dictionary
         };
     }
 
@@ -263,12 +263,18 @@ export class PPOCREngine {
         const [batchSize, channels, height, width] = outputTensor.dims;
         const data = outputTensor.data;
         
+        // Apply sigmoid to get probabilities
+        const probMap = new Float32Array(height * width);
+        for (let i = 0; i < height * width; i++) {
+            probMap[i] = 1 / (1 + Math.exp(-data[i]));  // Sigmoid
+        }
+        
         // Apply threshold
         const bitmap = new Uint8Array(height * width);
         const thresh = CONFIG.det_db_thresh;
         
         for (let i = 0; i < height * width; i++) {
-            bitmap[i] = data[i] > thresh ? 1 : 0;
+            bitmap[i] = probMap[i] > thresh ? 1 : 0;
         }
         
         // Find text regions
@@ -278,8 +284,8 @@ export class PPOCREngine {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = y * width + x;
-                if (bitmap[idx] === 1 && !visited.has(idx) && data[idx] > CONFIG.det_db_box_thresh) {
-                    const box = this.expandBox(bitmap, data, x, y, width, height, visited);
+                if (bitmap[idx] === 1 && !visited.has(idx) && probMap[idx] > CONFIG.det_db_box_thresh) {
+                    const box = this.expandBox(bitmap, probMap, x, y, width, height, visited);
                     if (box) {
                         // Scale box back to original size
                         const scaledBox = {
@@ -333,8 +339,8 @@ export class PPOCREngine {
             }
         }
         
-        // Filter small regions
-        if ((maxX - minX) < 5 || (maxY - minY) < 5) {
+        // Filter small regions - lower threshold
+        if ((maxX - minX) < 3 || (maxY - minY) < 3) {
             return null;
         }
         

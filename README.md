@@ -28,9 +28,11 @@ A browser-based OCR (Optical Character Recognition) application powered by Paddl
 
 ## Models Used
 
-- **Detection**: PP-OCRv5_server_det_infer.onnx (84.3MB) - 83.8% accuracy
-- **Recognition**: PP-OCRv5_server_rec_infer.onnx (81MB) - 86.38% accuracy
-- **Dictionary**: PP-OCRv5 multilingual dictionary (supports 80+ languages)
+- **Detection**: PP-OCRv5_mobile_det_infer.onnx (4.7MB) - Optimized for web performance
+- **Recognition**: 
+  - en_PP-OCRv4_mobile_rec_infer.onnx (7.4MB) - English-specific model
+  - PP-OCRv5_mobile_rec_infer.onnx (16MB) - Multilingual support (80+ languages)
+- **Dictionary**: Multiple options for English and multilingual text
 
 Models are from the [paddleocr.js](https://github.com/X3ZvaWQ/paddleocr.js) project and served directly from GitHub Pages.
 
@@ -174,11 +176,10 @@ client-ocr-app/
 │   └── style.css                 # Styles
 ├── public/
 │   └── models/                   # ONNX model files
-│       ├── PP-OCRv5_server_det_infer.onnx
-│       ├── PP-OCRv5_server_rec_infer.onnx
 │       ├── PP-OCRv5_mobile_det_infer.onnx
+│       ├── PP-OCRv5_mobile_rec_infer.onnx
 │       ├── en_PP-OCRv4_mobile_rec_infer.onnx
-│       └── ppocr_keys_v1.txt
+│       └── en_dict.txt
 ├── index.html                    # Entry HTML file
 ├── vite.config.js               # Vite configuration
 └── package.json                 # Project metadata
@@ -234,18 +235,18 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Model Information
 
-### PP-OCRv5 Server Detection Model
-- Architecture: DBNet with ResNet backbone
+### PP-OCRv5 Mobile Detection Model
+- Architecture: DBNet with MobileNetV3 backbone
 - Input size: Dynamic (resized to multiple of 32)
 - Output: Probability map of text regions
-- Accuracy: 83.8% on multilingual dataset
+- Optimized thresholds for better detection
 
-### PP-OCRv5 Server Recognition Model
-- Architecture: SVTR with enhanced backbone
+### PP-OCRv4 English Recognition Model
+- Architecture: CRNN with MobileNetV3 backbone
 - Input size: Fixed height 48px, variable width
 - Output: Character sequence probabilities
-- Languages: 80+ languages including English, Chinese, Japanese
-- Accuracy: 86.38% on Chinese dataset
+- Language: English-specific
+- Enhanced preprocessing for better accuracy
 
 ## License
 
