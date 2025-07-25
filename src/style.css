@@ -36,6 +36,20 @@ header p {
     margin-bottom: 1rem;
 }
 
+.advanced-features-note {
+    margin-top: 0.5rem;
+    opacity: 0.8;
+}
+
+.advanced-features-note a {
+    color: #a0c4ff;
+    text-decoration: none;
+}
+
+.advanced-features-note a:hover {
+    text-decoration: underline;
+}
+
 .status {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -371,6 +385,159 @@ main {
     color: #666;
     font-style: italic;
     margin-top: 1rem;
+}
+
+/* Engine Selection */
+.engine-selection {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.engine-selection h2 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.engine-toggle {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.engine-toggle input[type="radio"] {
+    display: none;
+}
+
+.engine-toggle label {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 2rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    min-width: 200px;
+}
+
+.engine-toggle label:hover {
+    border-color: #007bff;
+    background: #f8f9fa;
+}
+
+.engine-toggle input[type="radio"]:checked + label {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.engine-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.engine-desc {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Engine Options */
+.engine-options {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.engine-options h3 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.model-selection {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.model-selection label {
+    flex: 0 0 140px;
+    font-weight: 500;
+    color: #555;
+}
+
+.model-selection select {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9rem;
+}
+
+/* Preprocessing toggle */
+.preprocessing-toggle {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.preprocessing-toggle h4 {
+    margin: 0 0 0.75rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.radio-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.radio-group input[type="radio"] {
+    display: none;
+}
+
+.radio-group label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+    min-width: 150px;
+}
+
+.radio-group label:hover {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.radio-group input[type="radio"]:checked + label {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.option-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.option-desc {
+    font-size: 0.8rem;
+    color: #666;
 }
 
 .actions {

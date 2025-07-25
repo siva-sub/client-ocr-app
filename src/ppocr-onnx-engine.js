@@ -27,18 +27,18 @@ const MODELS = {
     }
 };
 
-// OCR configuration
+// OCR configuration - optimized for English with PP-OCRv5
 const CONFIG = {
     // Detection parameters
     det_limit_side_len: 960,
     det_limit_type: 'max',
-    det_db_thresh: 0.3,      // Threshold for detection probability map
-    det_db_box_thresh: 0.5,   // Lowered from 0.6 for more detections
-    det_db_unclip_ratio: 1.6, // Slightly increased for better text coverage
+    det_db_thresh: 0.25,      // Lower threshold for better English detection
+    det_db_box_thresh: 0.45,  // Optimized for English text
+    det_db_unclip_ratio: 1.8, // Better coverage for English characters
     
     // Recognition parameters
     rec_batch_num: 6,
-    drop_score: 0.3,          // Lowered from 0.5 to keep more results
+    drop_score: 0.25,         // Lower threshold for English text
     
     // Image preprocessing (ImageNet normalization)
     mean: [0.485, 0.456, 0.406],
@@ -53,34 +53,70 @@ export class PPOCREngine {
         this.initialized = false;
         this.canvas = null;
         this.ctx = null;
+        this.modelConfig = {
+            detection: 'PP-OCRv5_server_det_infer.onnx',  // Use server version for better accuracy
+            recognition: 'PP-OCRv5_server_rec_infer.onnx',  // PP-OCRv5 has better English support
+            dictionary: 'ppocr_keys_v1.txt'  // PP-OCRv5 uses unified dictionary
+        };
+    }
+
+    setModelConfig(config) {
+        // Update model configuration
+        if (config.detection) this.modelConfig.detection = config.detection;
+        if (config.recognition) this.modelConfig.recognition = config.recognition;
+        if (config.dictionary) this.modelConfig.dictionary = config.dictionary;
+        
+        // Mark as not initialized to force reload
+        this.initialized = false;
     }
 
     async initialize(progressCallback) {
-        if (this.initialized) return;
+        // Always reinitialize when called to ensure proper model loading
+        this.initialized = false;
 
         try {
-            // Create canvas for image processing
+            // Create canvas for image processing with willReadFrequently for better performance
             this.canvas = document.createElement('canvas');
-            this.ctx = this.canvas.getContext('2d');
+            this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
             // Load dictionary
-            progressCallback?.({ status: 'loading', message: 'Loading English dictionary...', progress: 10 });
+            progressCallback?.({ status: 'loading', message: 'Loading dictionary...', progress: 10 });
             await this.loadDictionary();
 
             // Load detection model
-            progressCallback?.({ status: 'loading', message: 'Loading PP-OCRv5 detection model...', progress: 30 });
-            this.detectionSession = await ort.InferenceSession.create(MODELS.detection.path, {
-                executionProviders: ['wasm'],
-                graphOptimizationLevel: 'all'
-            });
+            const detectionName = this.modelConfig.detection.replace('.onnx', '').replace(/_/g, ' ');
+            progressCallback?.({ status: 'loading', message: `Loading ${detectionName}...`, progress: 30 });
+            
+            // Release existing session if any
+            if (this.detectionSession) {
+                await this.detectionSession.release();
+            }
+            
+            this.detectionSession = await ort.InferenceSession.create(
+                MODEL_BASE + this.modelConfig.detection, 
+                {
+                    executionProviders: ['wasm'],
+                    graphOptimizationLevel: 'all'
+                }
+            );
             console.log('Detection model loaded:', this.detectionSession.inputNames, this.detectionSession.outputNames);
 
             // Load recognition model
-            progressCallback?.({ status: 'loading', message: 'Loading PP-OCRv4 English recognition model...', progress: 70 });
-            this.recognitionSession = await ort.InferenceSession.create(MODELS.recognition.path, {
-                executionProviders: ['wasm'],
-                graphOptimizationLevel: 'all'
-            });
+            const recognitionName = this.modelConfig.recognition.replace('.onnx', '').replace(/_/g, ' ');
+            progressCallback?.({ status: 'loading', message: `Loading ${recognitionName}...`, progress: 70 });
+            
+            // Release existing session if any
+            if (this.recognitionSession) {
+                await this.recognitionSession.release();
+            }
+            
+            this.recognitionSession = await ort.InferenceSession.create(
+                MODEL_BASE + this.modelConfig.recognition, 
+                {
+                    executionProviders: ['wasm'],
+                    graphOptimizationLevel: 'all'
+                }
+            );
             console.log('Recognition model loaded:', this.recognitionSession.inputNames, this.recognitionSession.outputNames);
 
             this.initialized = true;
@@ -93,12 +129,12 @@ export class PPOCREngine {
 
     async loadDictionary() {
         try {
-            const response = await fetch(MODELS.dictionary.path);
+            const response = await fetch(MODEL_BASE + this.modelConfig.dictionary);
             const text = await response.text();
             this.charDict = text.split('\n').filter(line => line.trim());
             // Add blank token at the beginning
             this.charDict.unshift(' ');
-            console.log(`Loaded dictionary with ${this.charDict.length} characters`);
+            console.log(`Loaded dictionary ${this.modelConfig.dictionary} with ${this.charDict.length} characters`);
         } catch (error) {
             console.error('Failed to load dictionary:', error);
             // Use basic ASCII as fallback
