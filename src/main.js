@@ -102,12 +102,15 @@ function setupEventListeners() {
 // Handle engine change
 async function handleEngineChange(event) {
     currentEngine = event.target.value;
+    console.log('Engine changed to:', currentEngine);
     
     // Update current OCR engine based on both engine and preprocessing selection
     if (currentEngine === 'paddle') {
         currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+        console.log('Using PaddleOCR engine:', currentPreprocessing);
     } else {
         currentOCREngine = tesseractOCREngine;
+        console.log('Using Tesseract engine');
     }
     
     // Show/hide paddle options
@@ -355,6 +358,8 @@ async function processImage() {
     
     try {
         console.log(`Processing image with ${engineName}...`);
+        console.log('Current engine variable:', currentEngine);
+        console.log('Current OCR engine object:', currentOCREngine);
         showStatus('Detecting and recognizing text...', 'info');
         
         const startTime = performance.now();
@@ -390,7 +395,8 @@ function displayResults(results, processingTime, engineName = 'PaddleOCR') {
     const isPDF = Array.isArray(results) && results[0]?.page !== undefined;
     
     // Check if it's PaddleOCR with bounding boxes
-    const isPaddleWithBoxes = currentEngine === 'paddle' && results.length > 0 && results[0].box;
+    const isPaddleWithBoxes = currentEngine === 'paddle' && results.length > 0 && results[0] && results[0].box;
+    console.log('Display check - currentEngine:', currentEngine, 'isPaddleWithBoxes:', isPaddleWithBoxes, 'results:', results);
     
     if (isPDF) {
         // Handle PDF results
