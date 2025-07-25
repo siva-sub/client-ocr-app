@@ -62,8 +62,8 @@ export class PPOCRImprovedEngine {
         this.ctx = null;
         this.modelConfig = {
             detection: 'PP-OCRv5_mobile_det_infer.onnx',  // PP-OCRv5 mobile detection
-            recognition: 'PP-OCRv5_mobile_rec_infer.onnx',  // PP-OCRv5 mobile recognition
-            dictionary: 'ppocr_keys_v1.txt'  // PP-OCRv5 uses unified dictionary
+            recognition: 'en_PP-OCRv4_mobile_rec_infer.onnx',  // English recognition model
+            dictionary: 'en_dict.txt'  // English dictionary
         };
     }
 
@@ -155,13 +155,17 @@ export class PPOCRImprovedEngine {
             throw new Error('OCR engine not initialized');
         }
 
+        console.log('Processing blob type:', imageBlob.type, 'size:', imageBlob.size);
+
         // Check if it's a PDF
         if (imageBlob.type === 'application/pdf') {
             return await this.processPDF(imageBlob);
         }
 
         // Convert blob to image
+        console.log('Converting blob to image...');
         const imageData = await this.blobToImage(imageBlob);
+        console.log('Image loaded:', imageData.width, 'x', imageData.height);
         
         // Detect text regions
         const boxes = await this.detectText(imageData);
@@ -174,9 +178,12 @@ export class PPOCRImprovedEngine {
     }
 
     async detectText(imageData) {
+        console.log('detectText called, checking detection session...');
         if (!this.detectionSession) {
             throw new Error('Detection model not loaded');
         }
+        console.log('Detection session exists:', this.detectionSession);
+        console.log('Current dictionary:', this.modelConfig.dictionary, 'Dictionary length:', this.charDict.length);
 
         try {
             // Resize image for detection
@@ -191,9 +198,20 @@ export class PPOCRImprovedEngine {
             
             // Run detection
             console.log('Running detection model...');
+            console.log('Input names:', this.detectionSession.inputNames);
+            console.log('Output names:', this.detectionSession.outputNames);
             const feeds = { [this.detectionSession.inputNames[0]]: inputTensor };
-            const output = await this.detectionSession.run(feeds);
-            console.log('Detection complete');
+            
+            let output;
+            try {
+                output = await this.detectionSession.run(feeds);
+                console.log('Detection complete');
+            } catch (inferenceError) {
+                console.error('ONNX inference error:', inferenceError);
+                console.error('Error code:', inferenceError.code);
+                console.error('Error message:', inferenceError.message);
+                throw inferenceError;
+            }
             
             // Post-process detection results
             const boxes = await this.postprocessDetection(
@@ -219,10 +237,12 @@ export class PPOCRImprovedEngine {
     }
 
     async resizeForDetection(imageData) {
-        const limitSideLen = CONFIG.det_limit_side_len;
-        const limitType = CONFIG.det_limit_type;
-        let newW = imageData.width;
-        let newH = imageData.height;
+        try {
+            console.log('resizeForDetection - input image size:', imageData.width, 'x', imageData.height);
+            const limitSideLen = CONFIG.det_limit_side_len;
+            const limitType = CONFIG.det_limit_type;
+            let newW = imageData.width;
+            let newH = imageData.height;
         
         // Calculate resize ratio based on RapidOCR approach
         let ratio = 1;
@@ -259,6 +279,10 @@ export class PPOCRImprovedEngine {
                 resizedImage.src = url;
             });
         });
+        } catch (error) {
+            console.error('Error in resizeForDetection:', error);
+            throw error;
+        }
     }
     
     async preprocessImage(imageData, targetW, targetH) {
