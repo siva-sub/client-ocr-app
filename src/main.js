@@ -125,7 +125,7 @@ async function handlePreprocessingChange(event) {
     if (currentEngine === 'paddle') {
         currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
         
-        // If using standard preprocessing, we need to update model config
+        // If using standard preprocessing, we need to update model config and reinitialize
         if (currentPreprocessing === 'standard') {
             const detectionModel = document.getElementById('detectionModel').value;
             const recognitionModel = document.getElementById('recognitionModel').value;
@@ -136,6 +136,22 @@ async function handlePreprocessingChange(event) {
                 recognition: recognitionModel,
                 dictionary: dictionary
             });
+            
+            // Reinitialize the standard engine
+            showStatus('Loading standard preprocessing models...', 'info');
+            try {
+                await ppOCREngine.initialize((progress) => {
+                    showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                });
+                showStatus('Standard preprocessing ready!', 'success');
+            } catch (error) {
+                console.error('Failed to initialize standard preprocessing:', error);
+                showError('Failed to load standard preprocessing models');
+                // Fallback to improved preprocessing
+                currentPreprocessing = 'improved';
+                currentOCREngine = ppOCRImprovedEngine;
+                document.getElementById('preprocessImproved').checked = true;
+            }
         }
         
         showStatus(`Switched to ${currentPreprocessing === 'improved' ? 'Improved (PPU)' : 'Standard'} preprocessing`, 'info');

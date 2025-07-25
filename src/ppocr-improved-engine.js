@@ -13,21 +13,22 @@ const MODEL_BASE = '/client-ocr-app/models/';
 
 // Improved configuration based on RapidOCR and ppu-paddle-ocr - optimized for better detection
 const CONFIG = {
-    // Detection parameters (lower thresholds for better detection)
-    det_limit_side_len: 960,     // Good resolution for detail
+    // Detection parameters (VERY low thresholds for maximum detection)
+    det_limit_side_len: 1280,    // Higher resolution for better detail
     det_limit_type: 'max',       // Use 'max' for consistent sizing
-    det_db_thresh: 0.1,          // Much lower threshold for better detection
-    det_db_box_thresh: 0.3,      // Lower box threshold to detect more text
-    det_db_unclip_ratio: 2.0,    // Higher ratio for better text coverage
-    det_db_min_size: 3,
-    det_db_max_candidates: 1000,  // Limit candidates to prevent overflow
+    det_db_thresh: 0.05,         // VERY low threshold for maximum detection
+    det_db_box_thresh: 0.1,      // VERY low box threshold to detect all text
+    det_db_unclip_ratio: 2.5,    // Even higher ratio for better text coverage
+    det_db_min_size: 2,          // Smaller minimum size for tiny text
+    det_db_max_candidates: 2000,  // More candidates for complex images
     det_use_dilation: true,      // Enable for better text connectivity
+    det_dilation_kernel: 3,      // Dilation kernel size
     
     // Recognition parameters (lower thresholds)
     rec_image_height: 48,
     rec_image_width: 320,        // Dynamic width calculation
     rec_batch_num: 6,
-    drop_score: 0.1,             // Much lower threshold to keep more results
+    drop_score: 0.05,            // VERY low threshold to keep all results
     
     // Preprocessing parameters (PP-OCRv5 style)
     det_mean: [0.485, 0.456, 0.406],
@@ -36,15 +37,19 @@ const CONFIG = {
     rec_std: 0.5,
     
     // Area thresholds
-    min_area_thresh: 5,          // Lower area threshold
+    min_area_thresh: 2,          // Very small area threshold
     
     // Text line merging
     vertical_gap_threshold: 0.5,  // Standard gap threshold
     
     // English-specific optimizations
     english_mode: true,
-    min_word_confidence: 0.3,    // Much lower confidence threshold
-    enable_word_splitting: true   // Split connected words in English
+    min_word_confidence: 0.1,    // Very low confidence threshold
+    enable_word_splitting: true,  // Split connected words in English
+    
+    // Grid parameters for finer detection
+    grid_size: 16,               // Much smaller grid size (was 32)
+    overlap_ratio: 0.2           // Overlap between grid cells
 };
 
 export class PPOCRImprovedEngine {
@@ -216,9 +221,10 @@ export class PPOCRImprovedEngine {
         newW = Math.round(newW * ratio);
         newH = Math.round(newH * ratio);
         
-        // Make dimensions divisible by 32 (requirement for the model)
-        const targetW = Math.round(newW / 32) * 32;
-        const targetH = Math.round(newH / 32) * 32;
+        // Make dimensions divisible by grid size for finer detection
+        const gridSize = CONFIG.grid_size;
+        const targetW = Math.round(newW / gridSize) * gridSize;
+        const targetH = Math.round(newH / gridSize) * gridSize;
         
         // Apply preprocessing to improve image quality
         const preprocessedImage = await this.preprocessImage(imageData, targetW, targetH);
@@ -256,32 +262,108 @@ export class PPOCRImprovedEngine {
         
         this.ctx.drawImage(imageData, offsetX, offsetY, scaledW, scaledH);
         
-        // Apply contrast enhancement
+        // Apply aggressive contrast enhancement
         const imgData = this.ctx.getImageData(0, 0, targetW, targetH);
         const pixels = imgData.data;
         
-        // Enhance contrast and convert to grayscale
+        // First pass: Calculate histogram
+        const histogram = new Array(256).fill(0);
+        const grayValues = [];
+        
         for (let i = 0; i < pixels.length; i += 4) {
-            // Convert to grayscale
-            const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+            const gray = Math.round(0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]);
+            grayValues.push(gray);
+            histogram[gray]++;
+        }
+        
+        // Calculate adaptive thresholds based on histogram
+        const totalPixels = grayValues.length;
+        let sum = 0;
+        let bgSum = 0;
+        let bgCount = 0;
+        let fgSum = 0;
+        let fgCount = 0;
+        
+        // Find mean
+        for (let i = 0; i < 256; i++) {
+            sum += i * histogram[i];
+        }
+        const mean = sum / totalPixels;
+        
+        // Calculate Otsu's threshold
+        let maxVariance = 0;
+        let threshold = 128;
+        
+        for (let t = 0; t < 256; t++) {
+            bgSum = 0;
+            bgCount = 0;
+            fgSum = 0;
+            fgCount = 0;
             
-            // Apply contrast enhancement
-            let enhanced = ((gray - 128) * 1.5) + 128;
-            enhanced = Math.max(0, Math.min(255, enhanced));
-            
-            // Apply slight sharpening
-            if (enhanced > 200) {
-                enhanced = 255; // Make light pixels white
-            } else if (enhanced < 50) {
-                enhanced = 0;   // Make dark pixels black
+            for (let i = 0; i < 256; i++) {
+                if (i <= t) {
+                    bgSum += i * histogram[i];
+                    bgCount += histogram[i];
+                } else {
+                    fgSum += i * histogram[i];
+                    fgCount += histogram[i];
+                }
             }
+            
+            if (bgCount === 0 || fgCount === 0) continue;
+            
+            const bgMean = bgSum / bgCount;
+            const fgMean = fgSum / fgCount;
+            const variance = bgCount * fgCount * Math.pow(bgMean - fgMean, 2);
+            
+            if (variance > maxVariance) {
+                maxVariance = variance;
+                threshold = t;
+            }
+        }
+        
+        // Second pass: Apply adaptive contrast enhancement
+        for (let i = 0; i < pixels.length; i += 4) {
+            const idx = Math.floor(i / 4);
+            let gray = grayValues[idx];
+            
+            // Apply aggressive contrast enhancement
+            if (gray < threshold) {
+                // Dark pixels - make darker
+                gray = Math.pow(gray / threshold, 2.2) * threshold;
+            } else {
+                // Light pixels - make lighter
+                gray = threshold + Math.pow((gray - threshold) / (255 - threshold), 0.45) * (255 - threshold);
+            }
+            
+            // Apply additional sharpening
+            let enhanced = gray;
+            
+            // Very aggressive thresholding
+            if (enhanced > threshold + 20) {
+                enhanced = 255; // Make light pixels pure white
+            } else if (enhanced < threshold - 20) {
+                enhanced = 0;   // Make dark pixels pure black
+            } else {
+                // Apply sigmoid curve for middle values
+                const x = (enhanced - threshold) / 20;
+                enhanced = threshold + 127 * (1 / (1 + Math.exp(-x)));
+            }
+            
+            enhanced = Math.max(0, Math.min(255, enhanced));
             
             pixels[i] = enhanced;
             pixels[i + 1] = enhanced;
             pixels[i + 2] = enhanced;
         }
         
+        // Apply morphological operations
         this.ctx.putImageData(imgData, 0, 0);
+        
+        // Apply slight blur to reduce noise, then sharpen
+        this.ctx.filter = 'blur(0.5px)';
+        this.ctx.drawImage(this.canvas, 0, 0);
+        this.ctx.filter = 'none';
         return this.canvas;
     }
 
@@ -783,9 +865,8 @@ export class PPOCRImprovedEngine {
                 return false;
             }
             
-            // Keep any text that has at least one alphanumeric character
-            const hasAlphanumeric = /[a-zA-Z0-9]/.test(result.text);
-            return hasAlphanumeric && result.text.trim().length > 0;
+            // Keep any text that has content (even single characters)
+            return result.text && result.text.trim().length > 0;
         });
     }
 

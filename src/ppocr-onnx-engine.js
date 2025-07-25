@@ -27,18 +27,18 @@ const MODELS = {
     }
 };
 
-// OCR configuration - optimized with lower thresholds
+// OCR configuration - optimized with very low thresholds
 const CONFIG = {
     // Detection parameters
-    det_limit_side_len: 960,
+    det_limit_side_len: 1280,
     det_limit_type: 'max',
-    det_db_thresh: 0.1,       // Much lower threshold for better detection
-    det_db_box_thresh: 0.3,   // Lower box threshold
-    det_db_unclip_ratio: 2.0, // Higher coverage
+    det_db_thresh: 0.05,      // Very low threshold for maximum detection
+    det_db_box_thresh: 0.15,  // Very low box threshold
+    det_db_unclip_ratio: 2.5, // Higher coverage
     
     // Recognition parameters
     rec_batch_num: 6,
-    drop_score: 0.1,          // Very low threshold to keep more text
+    drop_score: 0.05,         // Extremely low threshold to keep all text
     
     // Image preprocessing (ImageNet normalization)
     mean: [0.485, 0.456, 0.406],
