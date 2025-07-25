@@ -1,6 +1,6 @@
-# PP-OCR Web - Client-Side OCR with ONNX Runtime
+# Client-Side OCR Web Application
 
-A browser-based OCR (Optical Character Recognition) application powered by PaddleOCR v5 models running entirely client-side using ONNX Runtime. Extract text from images and PDFs directly in your browser without any server.
+A browser-based OCR (Optical Character Recognition) application with multiple OCR engines running entirely client-side. Extract text from images and PDFs directly in your browser without any server. Features both Tesseract.js (recommended for accuracy) and experimental PaddleOCR v5 support.
 
 🔗 **Live Demo**: [https://siva-sub.github.io/client-ocr-app](https://siva-sub.github.io/client-ocr-app)
 
@@ -8,10 +8,12 @@ A browser-based OCR (Optical Character Recognition) application powered by Paddl
 
 - 🚀 **100% Client-Side**: All processing happens in your browser using WebAssembly
 - 🔒 **Privacy-First**: Your images and PDFs never leave your device
-- ⚡ **PP-OCRv5 Models**: Latest PaddleOCR v5 models for both detection and recognition
+- 🔄 **Dual OCR Engines**: 
+  - **Tesseract.js** (Recommended): Mature, accurate OCR engine especially for English
+  - **PaddleOCR v5** (Experimental): Mobile models via ONNX Runtime - faster but less accurate
 - 📄 **PDF Support**: Extract text from multi-page PDF documents with visual preview
 - 🖼️ **PDF Preview**: See thumbnails of PDF pages before processing
-- 🌍 **Multilingual Support**: PP-OCRv5 supports 80+ languages
+- 🌍 **Language Support**: English (best), with experimental multilingual support
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 - 🎯 **Easy to Use**: Simple drag-and-drop interface
 - 💾 **Export Options**: Copy text or download as file
@@ -19,22 +21,26 @@ A browser-based OCR (Optical Character Recognition) application powered by Paddl
 
 ## Technology Stack
 
-- **PP-OCRv5**: State-of-the-art text detection model from PaddleOCR
-- **PP-OCRv4**: English text recognition model
-- **ONNX Runtime Web**: High-performance neural network inference in browser
+- **Tesseract.js**: Mature OCR engine with excellent English support
+- **PaddleOCR v5** (Experimental): Mobile models for faster processing
+- **ONNX Runtime Web**: Neural network inference in browser (for PaddleOCR)
 - **PDF.js**: Mozilla's PDF rendering library
 - **Vite**: Lightning fast build tool
-- **WebAssembly**: Near-native performance for model inference
+- **WebAssembly**: Near-native performance for OCR processing
 
-## Models Used
+## OCR Engines
 
-- **Detection**: PP-OCRv5_mobile_det_infer.onnx (4.7MB) - Optimized for web performance
-- **Recognition**: 
-  - en_PP-OCRv4_mobile_rec_infer.onnx (7.4MB) - English-specific model
-  - PP-OCRv5_mobile_rec_infer.onnx (16MB) - Multilingual support (80+ languages)
-- **Dictionary**: Multiple options for English and multilingual text
+### Tesseract.js (Recommended)
+- **Accuracy**: Excellent for English text
+- **Languages**: 100+ languages with downloadable language packs
+- **Size**: ~15MB core + language data
+- **Performance**: Slower but more accurate
 
-Models are from the [paddleocr.js](https://github.com/X3ZvaWQ/paddleocr.js) project and served directly from GitHub Pages.
+### PaddleOCR v5 (Experimental)
+- **Note**: Using mobile models via ONNX Runtime - lower accuracy than native implementation
+- **Detection**: PP-OCRv5_mobile_det_infer.onnx (4.7MB)
+- **Recognition**: en_PP-OCRv4_mobile_rec_infer.onnx (7.4MB) for English
+- **Performance**: Faster but less accurate, especially for complex layouts
 
 ## PDF-Extract-Kit Integration
 
@@ -116,19 +122,36 @@ The `dist` folder contains static files that can be deployed to any static hosti
 
 ## How It Works
 
+### Tesseract.js Engine (Default)
 1. **Image Loading**: Files are loaded directly in the browser
 2. **PDF Processing**: PDFs are rendered to images using PDF.js
-3. **Text Detection**: PP-OCRv5 model identifies text regions
-4. **Text Recognition**: PP-OCRv4 English model extracts text from each region
-5. **Post-processing**: CTC decoding and confidence filtering
-6. **Results Display**: Text shown with bounding boxes and confidence scores
+3. **Preprocessing**: Image enhancement and binarization
+4. **OCR Processing**: Tesseract engine analyzes the entire image
+5. **Post-processing**: Text extraction with confidence scores
+6. **Results Display**: Extracted text with formatting preserved
+
+### PaddleOCR Engine (Experimental)
+1. **Image Loading**: Files are loaded directly in the browser
+2. **PDF Processing**: PDFs are rendered to images using PDF.js
+3. **Text Detection**: PP-OCRv5 mobile model identifies text regions
+4. **Text Recognition**: PP-OCRv4 model extracts text from each region
+5. **Post-processing**: CTC decoding with lowered thresholds
+6. **Results Display**: Text shown with bounding boxes
 
 ## Performance
 
+### Tesseract.js (Recommended)
+- Model loading: ~15MB core + language data (cached)
+- Processing time: 3-5 seconds per image (more accurate)
+- Better handling of complex layouts and fonts
+
+### PaddleOCR (Experimental)
 - Model loading: ~12MB (one-time download, cached)
-- Processing time: 1-3 seconds per image (depending on complexity)
-- PDF processing: Additional 1-2 seconds per page
-- All processing is local after initial model download
+- Processing time: 1-2 seconds per image (faster but less accurate)
+- Mobile models have limitations compared to server models
+- Lower accuracy due to ONNX Runtime constraints
+
+All processing is local after initial model download.
 
 ## OCR Pipeline
 

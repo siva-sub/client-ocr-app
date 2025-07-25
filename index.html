@@ -22,16 +22,16 @@
             <section class="engine-selection">
                 <h2>Select OCR Engine</h2>
                 <div class="engine-toggle">
-                    <input type="radio" id="enginePaddle" name="ocrEngine" value="paddle" checked>
-                    <label for="enginePaddle">
-                        <span class="engine-name">PaddleOCR v5</span>
-                        <span class="engine-desc">Latest PP-OCRv5 models - Fast & Accurate</span>
+                    <input type="radio" id="engineTesseract" name="ocrEngine" value="tesseract" checked>
+                    <label for="engineTesseract">
+                        <span class="engine-name">Tesseract.js (Recommended)</span>
+                        <span class="engine-desc">Mature OCR engine - Better accuracy for English</span>
                     </label>
                     
-                    <input type="radio" id="engineTesseract" name="ocrEngine" value="tesseract">
-                    <label for="engineTesseract">
-                        <span class="engine-name">Tesseract.js</span>
-                        <span class="engine-desc">Classic OCR engine - Good for English</span>
+                    <input type="radio" id="enginePaddle" name="ocrEngine" value="paddle">
+                    <label for="enginePaddle">
+                        <span class="engine-name">PaddleOCR v5 (Experimental)</span>
+                        <span class="engine-desc">Mobile models via ONNX Runtime - Lower accuracy</span>
                     </label>
                 </div>
                 

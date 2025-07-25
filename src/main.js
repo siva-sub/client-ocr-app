@@ -9,9 +9,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/client-ocr-app/pdf.worker.min.js';
 
 // Global variables
 let currentImageBlob = null;
-let currentEngine = 'paddle';  // 'paddle' or 'tesseract'
+let currentEngine = 'tesseract';  // Default to tesseract for better accuracy
 let currentPreprocessing = 'improved'; // 'standard' or 'improved'
-let currentOCREngine = ppOCRImprovedEngine;
+let currentOCREngine = tesseractOCREngine;
 
 // DOM elements
 const fileInput = document.getElementById('fileInput');
