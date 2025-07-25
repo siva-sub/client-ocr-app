@@ -3,12 +3,20 @@
 .git/
 node_modules/
 .gitignore
+demo.html
+create-sample-image.html
+download-ppocr-models.sh
+deploy.sh
+
+# Source files (we'll publish dist)
+src/
+public/
 
 # Build files
 vite.config.js
 
 # Documentation
-DEPLOYMENT.md
+*.md
 
 # Logs
 *.log
