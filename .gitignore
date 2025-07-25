@@ -50,4 +50,5 @@ dist-ssr
 
 # Cache
 .cache
-.parcel-cache
+.parcel-cachetemp-ppu-paddle-ocr/
+temp-rapidocr/

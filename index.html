@@ -58,23 +58,21 @@
                     <div class="model-selection">
                         <label for="detectionModel">Detection Model:</label>
                         <select id="detectionModel">
-                            <option value="PP-OCRv5_mobile_det_infer.onnx">PP-OCRv5 Mobile (4.7MB)</option>
-                            <option value="PP-OCRv5_server_det_infer.onnx" selected>PP-OCRv5 Server (80MB) - Better Accuracy</option>
+                            <option value="PP-OCRv5_mobile_det_infer.onnx" selected>PP-OCRv5 Mobile (4.7MB)</option>
                         </select>
                     </div>
                     <div class="model-selection">
                         <label for="recognitionModel">Recognition Model:</label>
                         <select id="recognitionModel">
-                            <option value="en_PP-OCRv4_mobile_rec_infer.onnx">PP-OCRv4 English (7.4MB)</option>
-                            <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Mobile (16MB)</option>
-                            <option value="PP-OCRv5_server_rec_infer.onnx" selected>PP-OCRv5 Server (81MB) - Best Accuracy</option>
+                            <option value="en_PP-OCRv4_mobile_rec_infer.onnx" selected>PP-OCRv4 English (7.4MB)</option>
+                            <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Multilingual (16MB)</option>
                         </select>
                     </div>
                     <div class="model-selection">
                         <label for="dictionary">Dictionary:</label>
                         <select id="dictionary">
-                            <option value="en_dict.txt">English (95 chars)</option>
-                            <option value="ppocr_keys_v1.txt" selected>PP-OCRv5 Multilingual (6623 chars)</option>
+                            <option value="en_dict.txt" selected>English (95 chars)</option>
+                            <option value="ppocr_keys_v1.txt">PP-OCR Multilingual (6623 chars)</option>
                             <option value="ppocrv5_dict.txt">PP-OCRv5 Extended (6623 chars)</option>
                         </select>
                     </div>
