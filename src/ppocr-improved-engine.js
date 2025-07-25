@@ -178,25 +178,32 @@ export class PPOCRImprovedEngine {
             throw new Error('Detection model not loaded');
         }
 
-        // Resize image for detection
-        const { resizedImage, ratio } = await this.resizeForDetection(imageData);
-        
-        // Preprocess for detection
-        const inputTensor = await this.preprocessForDetection(resizedImage);
-        
-        // Run detection
-        const feeds = { [this.detectionSession.inputNames[0]]: inputTensor };
-        const output = await this.detectionSession.run(feeds);
-        
-        // Post-process detection results
-        const boxes = await this.postprocessDetection(
-            output[this.detectionSession.outputNames[0]], 
-            resizedImage.width, 
-            resizedImage.height, 
-            ratio
-        );
-        
-        return this.sortBoxes(boxes);
+        try {
+            // Resize image for detection
+            const { resizedImage, ratio } = await this.resizeForDetection(imageData);
+            
+            // Preprocess for detection
+            const inputTensor = await this.preprocessForDetection(resizedImage);
+            
+            // Run detection
+            const feeds = { [this.detectionSession.inputNames[0]]: inputTensor };
+            const output = await this.detectionSession.run(feeds);
+            
+            // Post-process detection results
+            const boxes = await this.postprocessDetection(
+                output[this.detectionSession.outputNames[0]], 
+                resizedImage.width, 
+                resizedImage.height, 
+                ratio
+            );
+            
+            console.log(`Detected ${boxes.length} text regions`);
+            return this.sortBoxes(boxes);
+        } catch (error) {
+            console.error('Error in detectText:', error);
+            // Return empty array instead of throwing to allow partial results
+            return [];
+        }
     }
 
     async resizeForDetection(imageData) {
@@ -262,92 +269,23 @@ export class PPOCRImprovedEngine {
         
         this.ctx.drawImage(imageData, offsetX, offsetY, scaledW, scaledH);
         
-        // Apply aggressive contrast enhancement
+        // Apply moderate contrast enhancement to preserve text
         const imgData = this.ctx.getImageData(0, 0, targetW, targetH);
         const pixels = imgData.data;
         
-        // First pass: Calculate histogram
-        const histogram = new Array(256).fill(0);
-        const grayValues = [];
-        
+        // Convert to grayscale and enhance contrast
         for (let i = 0; i < pixels.length; i += 4) {
-            const gray = Math.round(0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]);
-            grayValues.push(gray);
-            histogram[gray]++;
-        }
-        
-        // Calculate adaptive thresholds based on histogram
-        const totalPixels = grayValues.length;
-        let sum = 0;
-        let bgSum = 0;
-        let bgCount = 0;
-        let fgSum = 0;
-        let fgCount = 0;
-        
-        // Find mean
-        for (let i = 0; i < 256; i++) {
-            sum += i * histogram[i];
-        }
-        const mean = sum / totalPixels;
-        
-        // Calculate Otsu's threshold
-        let maxVariance = 0;
-        let threshold = 128;
-        
-        for (let t = 0; t < 256; t++) {
-            bgSum = 0;
-            bgCount = 0;
-            fgSum = 0;
-            fgCount = 0;
+            // Convert to grayscale
+            const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
             
-            for (let i = 0; i < 256; i++) {
-                if (i <= t) {
-                    bgSum += i * histogram[i];
-                    bgCount += histogram[i];
-                } else {
-                    fgSum += i * histogram[i];
-                    fgCount += histogram[i];
-                }
-            }
+            // Moderate contrast enhancement - less aggressive
+            let enhanced = ((gray - 128) * 1.2) + 128;
             
-            if (bgCount === 0 || fgCount === 0) continue;
-            
-            const bgMean = bgSum / bgCount;
-            const fgMean = fgSum / fgCount;
-            const variance = bgCount * fgCount * Math.pow(bgMean - fgMean, 2);
-            
-            if (variance > maxVariance) {
-                maxVariance = variance;
-                threshold = t;
-            }
-        }
-        
-        // Second pass: Apply adaptive contrast enhancement
-        for (let i = 0; i < pixels.length; i += 4) {
-            const idx = Math.floor(i / 4);
-            let gray = grayValues[idx];
-            
-            // Apply aggressive contrast enhancement
-            if (gray < threshold) {
-                // Dark pixels - make darker
-                gray = Math.pow(gray / threshold, 2.2) * threshold;
-            } else {
-                // Light pixels - make lighter
-                gray = threshold + Math.pow((gray - threshold) / (255 - threshold), 0.45) * (255 - threshold);
-            }
-            
-            // Apply additional sharpening
-            let enhanced = gray;
-            
-            // Very aggressive thresholding
-            if (enhanced > threshold + 20) {
-                enhanced = 255; // Make light pixels pure white
-            } else if (enhanced < threshold - 20) {
-                enhanced = 0;   // Make dark pixels pure black
-            } else {
-                // Apply sigmoid curve for middle values
-                const x = (enhanced - threshold) / 20;
-                enhanced = threshold + 127 * (1 / (1 + Math.exp(-x)));
+            // Gentle clamping to preserve mid-tones
+            if (enhanced > 240) {
+                enhanced = 255;
+            } else if (enhanced < 15) {
+                enhanced = 0;
             }
             
             enhanced = Math.max(0, Math.min(255, enhanced));
@@ -357,13 +295,7 @@ export class PPOCRImprovedEngine {
             pixels[i + 2] = enhanced;
         }
         
-        // Apply morphological operations
         this.ctx.putImageData(imgData, 0, 0);
-        
-        // Apply slight blur to reduce noise, then sharpen
-        this.ctx.filter = 'blur(0.5px)';
-        this.ctx.drawImage(this.canvas, 0, 0);
-        this.ctx.filter = 'none';
         return this.canvas;
     }
 
@@ -392,20 +324,23 @@ export class PPOCRImprovedEngine {
     }
 
     async postprocessDetection(outputTensor, imgWidth, imgHeight, ratio) {
-        const [batchSize, channels, height, width] = outputTensor.dims;
-        const data = outputTensor.data;
-        
-        // Convert to probability map
-        const probMap = new Float32Array(height * width);
-        for (let i = 0; i < height * width; i++) {
-            probMap[i] = 1 / (1 + Math.exp(-data[i]));  // Sigmoid
-        }
-        
-        // Threshold
-        const bitmap = new Uint8Array(height * width);
-        for (let i = 0; i < height * width; i++) {
-            bitmap[i] = probMap[i] > CONFIG.det_db_thresh ? 255 : 0;
-        }
+        try {
+            const [batchSize, channels, height, width] = outputTensor.dims;
+            const data = outputTensor.data;
+            
+            console.log(`Detection output shape: ${height}x${width}, total pixels: ${height * width}`);
+            
+            // Convert to probability map
+            const probMap = new Float32Array(height * width);
+            for (let i = 0; i < height * width; i++) {
+                probMap[i] = 1 / (1 + Math.exp(-data[i]));  // Sigmoid
+            }
+            
+            // Threshold
+            const bitmap = new Uint8Array(height * width);
+            for (let i = 0; i < height * width; i++) {
+                bitmap[i] = probMap[i] > CONFIG.det_db_thresh ? 255 : 0;
+            }
         
         // Find contours (limit to prevent overflow)
         const boxes = [];
@@ -436,6 +371,10 @@ export class PPOCRImprovedEngine {
         }
         
         return boxes;
+        } catch (error) {
+            console.error('Error in postprocessDetection:', error);
+            throw new Error(`Detection post-processing failed: ${error.message}`);
+        }
     }
 
     findConnectedComponent(bitmap, width, height, startX, startY, visited, probMap) {
@@ -443,13 +382,18 @@ export class PPOCRImprovedEngine {
         const points = [];
         let totalScore = 0;
         let count = 0;
-        const MAX_COMPONENT_SIZE = 50000; // Prevent excessive processing
+        const MAX_COMPONENT_SIZE = 10000; // Smaller limit for individual components
         
         // Mark starting point as visited immediately
         const startIdx = startY * width + startX;
         if (visited.has(startIdx) || bitmap[startIdx] !== 255) {
             return null;
         }
+        
+        // For text detection, we want to find individual text lines/words
+        // not merge everything into one giant component
+        const componentMap = new Set();
+        componentMap.add(startIdx);
         
         while (stack.length > 0 && points.length < MAX_COMPONENT_SIZE) {
             const [x, y] = stack.pop();
@@ -463,16 +407,27 @@ export class PPOCRImprovedEngine {
                 totalScore += probMap[idx];
                 count++;
                 
-                // Check 8 neighbors
-                for (let dy = -1; dy <= 1; dy++) {
-                    for (let dx = -1; dx <= 1; dx++) {
-                        if (dx === 0 && dy === 0) continue;
-                        const nx = x + dx;
-                        const ny = y + dy;
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            const nidx = ny * width + nx;
-                            if (!visited.has(nidx) && bitmap[nidx] === 255) {
+                // For text, use 4-connectivity instead of 8 to avoid merging separate lines
+                const neighbors = [
+                    [x, y - 1], // top
+                    [x, y + 1], // bottom
+                    [x - 1, y], // left
+                    [x + 1, y]  // right
+                ];
+                
+                for (const [nx, ny] of neighbors) {
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const nidx = ny * width + nx;
+                        if (!visited.has(nidx) && bitmap[nidx] === 255) {
+                            // Check if this would create too large a component
+                            // This helps separate text lines
+                            const yDiff = Math.abs(ny - startY);
+                            const xDiff = Math.abs(nx - startX);
+                            
+                            // Limit component growth to prevent merging text lines
+                            if (yDiff < height * 0.05 || xDiff < width * 0.3) {
                                 stack.push([nx, ny]);
+                                componentMap.add(nidx);
                             }
                         }
                     }
@@ -492,14 +447,15 @@ export class PPOCRImprovedEngine {
         let minY = Math.min(...ys);
         let maxY = Math.max(...ys);
         
-        // Apply unclip ratio
+        // Apply unclip ratio - different padding for x and y to better fit text
         const unclipRatio = CONFIG.det_db_unclip_ratio;
-        const padding = Math.max((maxX - minX), (maxY - minY)) * (unclipRatio - 1) / 2;
+        const xPadding = (maxX - minX) * 0.1; // 10% horizontal padding
+        const yPadding = (maxY - minY) * 0.2; // 20% vertical padding for better line coverage
         
-        minX = Math.max(0, minX - padding);
-        maxX = Math.min(width - 1, maxX + padding);
-        minY = Math.max(0, minY - padding);
-        maxY = Math.min(height - 1, maxY + padding);
+        minX = Math.max(0, minX - xPadding);
+        maxX = Math.min(width - 1, maxX + xPadding);
+        minY = Math.max(0, minY - yPadding);
+        maxY = Math.min(height - 1, maxY + yPadding);
         
         return {
             points: [
