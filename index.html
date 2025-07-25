@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PP-OCR Web - Client-Side OCR with ONNX Runtime</title>
-  <script type="module" crossorigin src="/client-ocr-app/assets/index-CVPkmBFD.js"></script>
-  <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-RaRa-Aiw.css">
+  <script type="module" crossorigin src="/client-ocr-app/assets/index-C2MGdviT.js"></script>
+  <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-BpZZRBgG.css">
 </head>
 <body>
     <div id="app">
@@ -13,9 +13,73 @@
             <h1>🔍 PP-OCR Web</h1>
             <p>Process images and extract text using PaddleOCR v5 models with ONNX Runtime - 100% client-side!</p>
             <div id="status" class="status info">Initializing...</div>
+            <p class="advanced-features-note">
+                <small>🔬 Advanced PDF features (table parsing, layout detection, formula recognition) available via 
+                <a href="https://github.com/siva-sub/client-ocr-app/tree/main/public/scripts" target="_blank">server-side scripts</a></small>
+            </p>
         </header>
 
         <main>
+            <section class="engine-selection">
+                <h2>Select OCR Engine</h2>
+                <div class="engine-toggle">
+                    <input type="radio" id="enginePaddle" name="ocrEngine" value="paddle" checked>
+                    <label for="enginePaddle">
+                        <span class="engine-name">PaddleOCR v5</span>
+                        <span class="engine-desc">Latest PP-OCRv5 models - Fast & Accurate</span>
+                    </label>
+                    
+                    <input type="radio" id="engineTesseract" name="ocrEngine" value="tesseract">
+                    <label for="engineTesseract">
+                        <span class="engine-name">Tesseract.js</span>
+                        <span class="engine-desc">Classic OCR engine - Good for English</span>
+                    </label>
+                </div>
+                
+                <div id="paddleOptions" class="engine-options">
+                    <h3>PaddleOCR Options</h3>
+                    
+                    <div class="preprocessing-toggle">
+                        <h4>Preprocessing Method</h4>
+                        <div class="radio-group">
+                            <input type="radio" id="preprocessStandard" name="preprocessing" value="standard">
+                            <label for="preprocessStandard">
+                                <span class="option-name">Standard</span>
+                                <span class="option-desc">Default PaddleOCR preprocessing</span>
+                            </label>
+                            
+                            <input type="radio" id="preprocessImproved" name="preprocessing" value="improved" checked>
+                            <label for="preprocessImproved">
+                                <span class="option-name">Improved (PPU)</span>
+                                <span class="option-desc">Enhanced preprocessing with better text detection</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="model-selection">
+                        <label for="detectionModel">Detection Model:</label>
+                        <select id="detectionModel">
+                            <option value="PP-OCRv5_mobile_det_infer.onnx" selected>PP-OCRv5 Mobile (4.7MB)</option>
+                        </select>
+                    </div>
+                    <div class="model-selection">
+                        <label for="recognitionModel">Recognition Model:</label>
+                        <select id="recognitionModel">
+                            <option value="en_PP-OCRv4_mobile_rec_infer.onnx" selected>PP-OCRv4 English (7.4MB)</option>
+                            <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Multilingual (15.8MB)</option>
+                        </select>
+                    </div>
+                    <div class="model-selection">
+                        <label for="dictionary">Dictionary:</label>
+                        <select id="dictionary">
+                            <option value="en_dict.txt" selected>English (95 chars)</option>
+                            <option value="ppocr_keys_v1.txt">Latin Extended (6623 chars)</option>
+                            <option value="ppocrv5_dict.txt">Multilingual (6623 chars)</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
             <section class="upload-section">
                 <div id="uploadArea" class="upload-area">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
