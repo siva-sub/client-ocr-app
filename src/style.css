@@ -331,6 +331,219 @@ main {
     font-size: 1.1em;
 }
 
+/* PaddleOCR Visual Results */
+.paddle-results-container {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.result-image-container {
+    position: relative;
+    display: inline-block;
+    margin: 1rem 0;
+    max-width: 100%;
+    overflow: auto;
+}
+
+.result-image-container img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.bounding-box-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.text-box {
+    position: absolute;
+    border: 2px solid rgba(102, 126, 234, 0.6);
+    background: rgba(102, 126, 234, 0.1);
+    pointer-events: all;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.text-box:hover {
+    border-color: rgba(102, 126, 234, 1);
+    background: rgba(102, 126, 234, 0.2);
+    z-index: 10;
+}
+
+.text-box.selected {
+    border-color: #764ba2;
+    background: rgba(118, 75, 162, 0.2);
+    z-index: 20;
+}
+
+.text-box-label {
+    position: absolute;
+    top: -25px;
+    left: -2px;
+    background: #667eea;
+    color: white;
+    padding: 2px 6px;
+    font-size: 12px;
+    border-radius: 3px;
+    white-space: nowrap;
+    display: none;
+}
+
+.text-box:hover .text-box-label {
+    display: block;
+}
+
+/* Confidence-based color coding */
+.text-box.high-confidence {
+    border-color: rgba(76, 175, 80, 0.8);
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.text-box.high-confidence:hover {
+    border-color: rgb(76, 175, 80);
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.text-box.medium-confidence {
+    border-color: rgba(255, 152, 0, 0.8);
+    background: rgba(255, 152, 0, 0.1);
+}
+
+.text-box.medium-confidence:hover {
+    border-color: rgb(255, 152, 0);
+    background: rgba(255, 152, 0, 0.2);
+}
+
+.text-box.low-confidence {
+    border-color: rgba(244, 67, 54, 0.8);
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.text-box.low-confidence:hover {
+    border-color: rgb(244, 67, 54);
+    background: rgba(244, 67, 54, 0.2);
+}
+
+/* Result tabs */
+.result-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.result-tab {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.result-tab:hover {
+    color: #667eea;
+}
+
+.result-tab.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+/* Grouped results display */
+.grouped-results {
+    display: none;
+}
+
+.grouped-results.active {
+    display: block;
+}
+
+.text-region-group {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.region-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.region-title {
+    font-weight: 600;
+    color: #333;
+}
+
+.region-confidence {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.confidence-bar {
+    width: 60px;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: #667eea;
+    transition: width 0.3s ease;
+}
+
+.confidence-text {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Enhanced detection list */
+.detection-list li {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    border-left: 3px solid #667eea;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.detection-list li:hover {
+    background: #e8eaf6;
+    transform: translateX(5px);
+}
+
+.detection-list li.highlighted {
+    background: #e3f2fd;
+    border-left-color: #1976d2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tab content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
 /* PDF Preview */
 .pdf-preview {
     width: 100%;
