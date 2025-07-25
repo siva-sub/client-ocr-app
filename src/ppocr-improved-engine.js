@@ -7,6 +7,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/client-ocr-app/pdf.worker.min.js';
 // Configure ONNX Runtime to use the bundled WASM files
 ort.env.wasm.wasmPaths = '/client-ocr-app/assets/';
 ort.env.wasm.numThreads = 1;
+// Enable WebGL backend for better performance
+ort.env.webgl.pack = false; // Disable packing for better compatibility
+ort.env.webgl.matmulMaxBatchSize = 16;
 
 // Model paths
 const MODEL_BASE = '/client-ocr-app/models/';
@@ -96,14 +99,32 @@ export class PPOCRImprovedEngine {
                 await this.detectionSession.release();
             }
             
-            this.detectionSession = await ort.InferenceSession.create(
-                MODEL_BASE + this.modelConfig.detection, 
-                {
-                    executionProviders: ['wasm'],
-                    graphOptimizationLevel: 'all'
+            // Try different execution providers for better compatibility
+            const executionProviders = ['webgl', 'wasm'];
+            let lastError = null;
+            
+            for (const provider of executionProviders) {
+                try {
+                    console.log(`Trying to load detection model with ${provider} provider...`);
+                    this.detectionSession = await ort.InferenceSession.create(
+                        MODEL_BASE + this.modelConfig.detection, 
+                        {
+                            executionProviders: [provider],
+                            graphOptimizationLevel: 'all',
+                            enableCpuMemArena: false,
+                            enableMemPattern: false
+                        }
+                    );
+                    console.log(`Detection model loaded successfully with ${provider}:`, this.detectionSession.inputNames, this.detectionSession.outputNames);
+                    break;
+                } catch (error) {
+                    console.warn(`Failed to load with ${provider}:`, error.message);
+                    lastError = error;
+                    if (provider === executionProviders[executionProviders.length - 1]) {
+                        throw lastError;
+                    }
                 }
-            );
-            console.log('Detection model loaded:', this.detectionSession.inputNames, this.detectionSession.outputNames);
+            }
 
             // Load recognition model
             const recognitionName = this.modelConfig.recognition.replace('.onnx', '').replace(/_/g, ' ');
@@ -114,14 +135,29 @@ export class PPOCRImprovedEngine {
                 await this.recognitionSession.release();
             }
             
-            this.recognitionSession = await ort.InferenceSession.create(
-                MODEL_BASE + this.modelConfig.recognition, 
-                {
-                    executionProviders: ['wasm'],
-                    graphOptimizationLevel: 'all'
+            // Try different execution providers for recognition model too
+            for (const provider of executionProviders) {
+                try {
+                    console.log(`Trying to load recognition model with ${provider} provider...`);
+                    this.recognitionSession = await ort.InferenceSession.create(
+                        MODEL_BASE + this.modelConfig.recognition, 
+                        {
+                            executionProviders: [provider],
+                            graphOptimizationLevel: 'all',
+                            enableCpuMemArena: false,
+                            enableMemPattern: false
+                        }
+                    );
+                    console.log(`Recognition model loaded successfully with ${provider}:`, this.recognitionSession.inputNames, this.recognitionSession.outputNames);
+                    break;
+                } catch (error) {
+                    console.warn(`Failed to load recognition with ${provider}:`, error.message);
+                    lastError = error;
+                    if (provider === executionProviders[executionProviders.length - 1]) {
+                        throw lastError;
+                    }
                 }
-            );
-            console.log('Recognition model loaded:', this.recognitionSession.inputNames, this.recognitionSession.outputNames);
+            }
 
             this.initialized = true;
             progressCallback?.({ status: 'ready', message: 'PP-OCR ready!', progress: 100 });
@@ -204,12 +240,66 @@ export class PPOCRImprovedEngine {
             
             let output;
             try {
+                console.log('Tensor data type:', inputTensor.type);
+                console.log('Tensor size:', inputTensor.data.length);
+                console.log('Tensor shape:', inputTensor.dims);
+                console.log('Expected input name:', this.detectionSession.inputNames[0]);
+                
+                // Get model input metadata if available
+                try {
+                    const inputInfo = this.detectionSession.inputNames.map(name => ({
+                        name,
+                        // Note: ONNX Runtime Web doesn't expose shape info directly
+                    }));
+                    console.log('Model inputs:', inputInfo);
+                } catch (e) {
+                    console.log('Could not get model input info');
+                }
+                
+                // Verify tensor data
+                const tensorData = inputTensor.data;
+                let nanCount = 0;
+                let infCount = 0;
+                let minVal = Infinity;
+                let maxVal = -Infinity;
+                
+                for (let i = 0; i < tensorData.length; i++) {
+                    if (isNaN(tensorData[i])) nanCount++;
+                    if (!isFinite(tensorData[i])) infCount++;
+                    minVal = Math.min(minVal, tensorData[i]);
+                    maxVal = Math.max(maxVal, tensorData[i]);
+                }
+                
+                console.log(`Tensor stats: min=${minVal.toFixed(3)}, max=${maxVal.toFixed(3)}`);
+                if (nanCount > 0 || infCount > 0) {
+                    console.error(`Invalid tensor data: ${nanCount} NaN values, ${infCount} Inf values`);
+                }
+                
                 output = await this.detectionSession.run(feeds);
                 console.log('Detection complete');
+                console.log('Output shape:', output[this.detectionSession.outputNames[0]].dims);
             } catch (inferenceError) {
                 console.error('ONNX inference error:', inferenceError);
                 console.error('Error code:', inferenceError.code);
                 console.error('Error message:', inferenceError.message);
+                console.error('Error stack:', inferenceError.stack);
+                
+                // Try to provide more context
+                if (inferenceError.code === 30757872 || inferenceError.message?.includes('invalid graph') || 
+                    inferenceError.message?.includes('dimension mismatch')) {
+                    console.error('Model compatibility issue detected. The model might require specific input dimensions.');
+                    console.error('Trying simplified approach...');
+                    
+                    // Try a simplified detection as fallback
+                    try {
+                        const simplifiedBoxes = await this.simplifiedDetection(resizedImage, ratio);
+                        console.log(`Simplified detection found ${simplifiedBoxes.length} regions`);
+                        return simplifiedBoxes;
+                    } catch (fallbackError) {
+                        console.error('Simplified detection also failed:', fallbackError);
+                    }
+                }
+                
                 throw inferenceError;
             }
             
@@ -261,9 +351,16 @@ export class PPOCRImprovedEngine {
         newH = Math.round(newH * ratio);
         
         // Make dimensions divisible by grid size for finer detection
-        const gridSize = CONFIG.grid_size;
-        const targetW = Math.round(newW / gridSize) * gridSize;
-        const targetH = Math.round(newH / gridSize) * gridSize;
+        const gridSize = CONFIG.grid_size || 32;
+        const targetW = Math.max(gridSize, Math.round(newW / gridSize) * gridSize);
+        const targetH = Math.max(gridSize, Math.round(newH / gridSize) * gridSize);
+        
+        console.log(`Resizing from ${imageData.width}x${imageData.height} to ${targetW}x${targetH} (ratio: ${ratio})`);
+        
+        // Ensure dimensions are valid
+        if (targetW <= 0 || targetH <= 0 || !isFinite(targetW) || !isFinite(targetH)) {
+            throw new Error(`Invalid target dimensions: ${targetW}x${targetH}`);
+        }
         
         // Apply preprocessing to improve image quality
         const preprocessedImage = await this.preprocessImage(imageData, targetW, targetH);
@@ -336,27 +433,53 @@ export class PPOCRImprovedEngine {
     }
 
     async preprocessForDetection(imageData) {
-        // Draw image to canvas
-        this.canvas.width = imageData.width;
-        this.canvas.height = imageData.height;
-        this.ctx.drawImage(imageData, 0, 0);
-        
-        const imgData = this.ctx.getImageData(0, 0, imageData.width, imageData.height);
-        const pixels = imgData.data;
-        
-        // Create tensor [1, 3, H, W]
-        const size = imageData.width * imageData.height;
-        const floatData = new Float32Array(3 * size);
-        
-        // Normalize and rearrange to CHW format (RapidOCR style)
-        for (let i = 0; i < size; i++) {
-            const pixelIndex = i * 4;
-            floatData[i] = (pixels[pixelIndex] / 255.0 - CONFIG.det_mean[0]) / CONFIG.det_std[0];
-            floatData[size + i] = (pixels[pixelIndex + 1] / 255.0 - CONFIG.det_mean[1]) / CONFIG.det_std[1];
-            floatData[2 * size + i] = (pixels[pixelIndex + 2] / 255.0 - CONFIG.det_mean[2]) / CONFIG.det_std[2];
+        try {
+            // Draw image to canvas
+            this.canvas.width = imageData.width;
+            this.canvas.height = imageData.height;
+            this.ctx.drawImage(imageData, 0, 0);
+            
+            const imgData = this.ctx.getImageData(0, 0, imageData.width, imageData.height);
+            const pixels = imgData.data;
+            
+            console.log(`Preprocessing image: ${imageData.width}x${imageData.height}`);
+            
+            // Create tensor [1, 3, H, W]
+            const size = imageData.width * imageData.height;
+            const floatData = new Float32Array(3 * size);
+            
+            // Normalize and rearrange to CHW format (RapidOCR style)
+            // Ensure we're using the correct normalization values
+            const mean = CONFIG.det_mean || [0.485, 0.456, 0.406];
+            const std = CONFIG.det_std || [0.229, 0.224, 0.225];
+            
+            for (let i = 0; i < size; i++) {
+                const pixelIndex = i * 4;
+                // Ensure values are valid numbers
+                const r = Math.max(0, Math.min(255, pixels[pixelIndex]));
+                const g = Math.max(0, Math.min(255, pixels[pixelIndex + 1]));
+                const b = Math.max(0, Math.min(255, pixels[pixelIndex + 2]));
+                
+                floatData[i] = (r / 255.0 - mean[0]) / std[0];
+                floatData[size + i] = (g / 255.0 - mean[1]) / std[1];
+                floatData[2 * size + i] = (b / 255.0 - mean[2]) / std[2];
+            }
+            
+            // Verify no NaN or Inf values
+            for (let i = 0; i < floatData.length; i++) {
+                if (!isFinite(floatData[i])) {
+                    console.error(`Invalid value at index ${i}: ${floatData[i]}`);
+                    floatData[i] = 0;
+                }
+            }
+            
+            const tensor = new ort.Tensor('float32', floatData, [1, 3, imageData.height, imageData.width]);
+            console.log('Created tensor with shape:', tensor.dims, 'type:', tensor.type);
+            return tensor;
+        } catch (error) {
+            console.error('Error in preprocessForDetection:', error);
+            throw new Error(`Preprocessing failed: ${error.message}`);
         }
-        
-        return new ort.Tensor('float32', floatData, [1, 3, imageData.height, imageData.width]);
     }
 
     async postprocessDetection(outputTensor, imgWidth, imgHeight, ratio) {
@@ -392,37 +515,62 @@ export class PPOCRImprovedEngine {
             
             // Threshold
             const bitmap = new Uint8Array(height * width);
+            let detectedPixels = 0;
             for (let i = 0; i < height * width; i++) {
                 bitmap[i] = probMap[i] > CONFIG.det_db_thresh ? 255 : 0;
+                if (bitmap[i] === 255) detectedPixels++;
             }
+            console.log(`Detected pixels: ${detectedPixels} out of ${height * width} (${(detectedPixels / (height * width) * 100).toFixed(2)}%)`);
+            console.log(`Detection threshold: ${CONFIG.det_db_thresh}`);
+            
+            // Log some sample probability values
+            const sampleProbs = [];
+            for (let i = 0; i < Math.min(10, probMap.length); i += Math.floor(probMap.length / 10)) {
+                sampleProbs.push(probMap[i].toFixed(3));
+            }
+            console.log('Sample probability values:', sampleProbs);
         
         // Find contours (limit to prevent overflow)
         const boxes = [];
         const visited = new Set();
         let numContours = 0;
+        let componentsFound = 0;
+        let rejectedByScore = 0;
+        let rejectedByArea = 0;
         
         for (let y = 0; y < height && numContours < CONFIG.det_db_max_candidates; y++) {
             for (let x = 0; x < width && numContours < CONFIG.det_db_max_candidates; x++) {
                 const idx = y * width + x;
                 if (bitmap[idx] === 255 && !visited.has(idx)) {
                     const box = this.findConnectedComponent(bitmap, width, height, x, y, visited, probMap);
-                    if (box && box.score >= CONFIG.det_db_box_thresh) {
-                        // Scale back to original size
-                        box.points = box.points.map(p => [
-                            Math.round(p[0] / ratio),
-                            Math.round(p[1] / ratio)
-                        ]);
-                        
-                        // Calculate area
-                        const area = this.calculatePolygonArea(box.points);
-                        if (area > CONFIG.min_area_thresh) {
-                            boxes.push(box);
-                            numContours++;
+                    if (box) {
+                        componentsFound++;
+                        if (box.score >= CONFIG.det_db_box_thresh) {
+                            // Scale back to original size
+                            box.points = box.points.map(p => [
+                                Math.round(p[0] / ratio),
+                                Math.round(p[1] / ratio)
+                            ]);
+                            
+                            // Calculate area
+                            const area = this.calculatePolygonArea(box.points);
+                            if (area > CONFIG.min_area_thresh) {
+                                boxes.push(box);
+                                numContours++;
+                            } else {
+                                rejectedByArea++;
+                                console.log(`Component rejected by area: ${area} < ${CONFIG.min_area_thresh}`);
+                            }
+                        } else {
+                            rejectedByScore++;
+                            console.log(`Component rejected by score: ${box.score.toFixed(3)} < ${CONFIG.det_db_box_thresh}`);
                         }
                     }
                 }
             }
         }
+        
+        console.log(`Detection summary: ${componentsFound} components found, ${numContours} accepted, ${rejectedByScore} rejected by score, ${rejectedByArea} rejected by area`);
         
         return boxes;
         } catch (error) {
@@ -531,6 +679,75 @@ export class PPOCRImprovedEngine {
             area -= points[j][0] * points[i][1];
         }
         return Math.abs(area) / 2;
+    }
+
+    // Simplified detection fallback when ONNX Runtime fails
+    async simplifiedDetection(imageData, ratio) {
+        console.log('Using simplified detection fallback...');
+        
+        // Convert image to grayscale canvas
+        this.canvas.width = imageData.width;
+        this.canvas.height = imageData.height;
+        this.ctx.drawImage(imageData, 0, 0);
+        
+        const imgData = this.ctx.getImageData(0, 0, imageData.width, imageData.height);
+        const pixels = imgData.data;
+        
+        // Convert to grayscale and apply threshold
+        const grayscale = new Uint8Array(imageData.width * imageData.height);
+        for (let i = 0; i < grayscale.length; i++) {
+            const idx = i * 4;
+            const gray = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
+            grayscale[i] = gray < 200 ? 255 : 0; // Simple threshold
+        }
+        
+        // Simple connected component analysis
+        const boxes = [];
+        const visited = new Set();
+        
+        for (let y = 10; y < imageData.height - 10; y += 20) {
+            for (let x = 10; x < imageData.width - 10; x += 20) {
+                const idx = y * imageData.width + x;
+                if (grayscale[idx] === 255 && !visited.has(idx)) {
+                    // Found text pixel, create a box
+                    let minX = x, maxX = x, minY = y, maxY = y;
+                    
+                    // Simple flood fill to find bounds
+                    const stack = [[x, y]];
+                    while (stack.length > 0 && visited.size < 10000) {
+                        const [cx, cy] = stack.pop();
+                        const cidx = cy * imageData.width + cx;
+                        
+                        if (cx < 0 || cx >= imageData.width || cy < 0 || cy >= imageData.height) continue;
+                        if (visited.has(cidx) || grayscale[cidx] !== 255) continue;
+                        
+                        visited.add(cidx);
+                        minX = Math.min(minX, cx);
+                        maxX = Math.max(maxX, cx);
+                        minY = Math.min(minY, cy);
+                        maxY = Math.max(maxY, cy);
+                        
+                        // Add neighbors
+                        stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                    }
+                    
+                    // Create box if it's large enough
+                    if ((maxX - minX) > 10 && (maxY - minY) > 10) {
+                        boxes.push({
+                            points: [
+                                [minX / ratio, minY / ratio],
+                                [maxX / ratio, minY / ratio],
+                                [maxX / ratio, maxY / ratio],
+                                [minX / ratio, maxY / ratio]
+                            ],
+                            score: 0.8
+                        });
+                    }
+                }
+            }
+        }
+        
+        return boxes;
     }
 
     sortBoxes(boxes) {

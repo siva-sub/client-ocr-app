@@ -13,6 +13,14 @@ let currentEngine = 'tesseract';  // Default to tesseract for better accuracy
 let currentPreprocessing = 'improved'; // 'standard' or 'improved'
 let currentOCREngine = tesseractOCREngine;
 
+// Add getter to prevent external modification
+Object.defineProperty(window, 'currentEngine', {
+    get: () => currentEngine,
+    set: (value) => {
+        console.warn('Attempted to set currentEngine directly. Use handleEngineChange instead.');
+    }
+});
+
 // DOM elements
 const fileInput = document.getElementById('fileInput');
 const uploadArea = document.getElementById('uploadArea');
@@ -60,9 +68,42 @@ async function initializeApp() {
         console.log('OCR engines loaded successfully!');
         showStatus('Ready to process images', 'success');
         setupEventListeners();
+        
+        // Set initial engine based on checked radio button
+        const checkedEngine = document.querySelector('input[name="ocrEngine"]:checked');
+        if (checkedEngine) {
+            currentEngine = checkedEngine.value;
+            if (currentEngine === 'paddle') {
+                currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+                document.getElementById('paddleOptions').style.display = 'block';
+            } else {
+                currentOCREngine = tesseractOCREngine;
+                document.getElementById('paddleOptions').style.display = 'none';
+            }
+            console.log('Initial engine set to:', currentEngine);
+            console.log('Initial OCR engine object:', currentOCREngine);
+        }
     } catch (error) {
         console.error('Failed to initialize OCR engines:', error);
-        showError('Failed to load OCR engines. Please check your internet connection and refresh the page.');
+        
+        // Provide more specific error messages
+        if (error.message?.includes('onnx') || error.message?.includes('ONNX')) {
+            showError('Failed to load PaddleOCR models. This may be due to browser compatibility issues. Please try using Tesseract.js instead.');
+        } else {
+            showError('Failed to load OCR engines. Please check your internet connection and refresh the page.');
+        }
+        
+        // Still allow Tesseract to work even if PaddleOCR fails
+        if (tesseractOCREngine.initialized) {
+            showStatus('Tesseract.js is ready. PaddleOCR failed to load.', 'warning');
+            // Force selection to Tesseract
+            currentEngine = 'tesseract';
+            currentOCREngine = tesseractOCREngine;
+            const tesseractRadio = document.getElementById('engineTesseract');
+            if (tesseractRadio) {
+                tesseractRadio.checked = true;
+            }
+        }
     }
 }
 
@@ -85,8 +126,13 @@ function setupEventListeners() {
     
     // Engine selection
     document.querySelectorAll('input[name="ocrEngine"]').forEach(radio => {
+        console.log('Adding event listener to radio:', radio.value, radio);
         radio.addEventListener('change', handleEngineChange);
     });
+    
+    // Check initial state
+    const checkedEngine = document.querySelector('input[name="ocrEngine"]:checked');
+    console.log('Initial checked engine:', checkedEngine?.value);
     
     // Preprocessing selection
     document.querySelectorAll('input[name="preprocessing"]').forEach(radio => {
@@ -101,16 +147,20 @@ function setupEventListeners() {
 
 // Handle engine change
 async function handleEngineChange(event) {
-    currentEngine = event.target.value;
-    console.log('Engine changed to:', currentEngine);
+    const newEngine = event.target.value;
+    console.log('Engine change event - new value:', newEngine);
+    console.log('Engine change event - old currentEngine:', currentEngine);
+    
+    currentEngine = newEngine;
     
     // Update current OCR engine based on both engine and preprocessing selection
     if (currentEngine === 'paddle') {
         currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
-        console.log('Using PaddleOCR engine:', currentPreprocessing);
+        console.log('Set currentOCREngine to PaddleOCR:', currentPreprocessing);
+        console.log('Verify currentOCREngine:', currentOCREngine);
     } else {
         currentOCREngine = tesseractOCREngine;
-        console.log('Using Tesseract engine');
+        console.log('Set currentOCREngine to Tesseract');
     }
     
     // Show/hide paddle options
@@ -118,6 +168,10 @@ async function handleEngineChange(event) {
     paddleOptions.style.display = currentEngine === 'paddle' ? 'block' : 'none';
     
     showStatus(`Switched to ${currentEngine === 'paddle' ? 'PaddleOCR' : 'Tesseract.js'}`, 'info');
+    
+    // Log final state
+    console.log('Final currentEngine:', currentEngine);
+    console.log('Final currentOCREngine:', currentOCREngine);
 }
 
 // Handle preprocessing change
@@ -360,9 +414,18 @@ async function processImage() {
         console.log(`Processing image with ${engineName}...`);
         console.log('Current engine variable:', currentEngine);
         console.log('Current OCR engine object:', currentOCREngine);
+        console.log('Current OCR engine name:', currentOCREngine.constructor.name);
         showStatus('Detecting and recognizing text...', 'info');
         
         const startTime = performance.now();
+        
+        // Make sure we're using the correct engine
+        if (currentEngine === 'paddle' && currentOCREngine === tesseractOCREngine) {
+            console.error('Engine mismatch detected! Expected PaddleOCR but got Tesseract');
+            // Force correct engine
+            currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+            console.log('Forced engine to:', currentOCREngine);
+        }
         
         // Process with current OCR engine
         const results = await currentOCREngine.process(currentImageBlob);
@@ -384,8 +447,27 @@ async function processImage() {
         
     } catch (error) {
         console.error('OCR processing error:', error);
+        console.error('Error code:', error.code);
         loadingIndicator.style.display = 'none';
-        showError('Failed to process image: ' + error.message);
+        
+        // Check if it's a PaddleOCR specific error
+        if (currentEngine === 'paddle' && (error.code === 30757872 || error.message.includes('30757872'))) {
+            showError('PaddleOCR failed: ONNX Runtime error. The PP-OCRv5 model appears to be incompatible with your browser.');
+            showStatus('Consider using Tesseract.js for better compatibility', 'warning');
+            
+            // Automatically suggest switching to Tesseract
+            const switchToTesseract = confirm('PaddleOCR failed due to browser compatibility. Would you like to switch to Tesseract.js?');
+            if (switchToTesseract) {
+                // Programmatically switch to Tesseract
+                const tesseractRadio = document.getElementById('engineTesseract');
+                if (tesseractRadio) {
+                    tesseractRadio.checked = true;
+                    tesseractRadio.dispatchEvent(new Event('change'));
+                }
+            }
+        } else {
+            showError('Failed to process image: ' + error.message);
+        }
     }
 }
 
