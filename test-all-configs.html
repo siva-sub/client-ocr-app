@@ -216,6 +216,7 @@
 
     <script type="module">
         import { ppOCRImprovedEngine } from './src/ppocr-improved-engine.js';
+        import { ppOCREngine } from './src/ppocr-onnx-engine.js';
         import { tesseractOCREngine } from './src/tesseract-ocr-engine.js';
         import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './src/infographic-ocr-config.js';
         import { 
@@ -225,6 +226,7 @@
             extractIDCardFields,
             extractReceiptFields
         } from './src/document-ocr-config.js';
+        import { PDF_OCR_CONFIG, updatePaddleOCRForPDF } from './src/pdf-ocr-config.js';
         
         let currentImage = null;
         let testResults = {};
@@ -256,7 +258,10 @@
             try {
                 await Promise.all([
                     ppOCRImprovedEngine.initialize((progress) => {
-                        console.log('PaddleOCR:', progress.message);
+                        console.log('PaddleOCR Improved:', progress.message);
+                    }),
+                    ppOCREngine.initialize((progress) => {
+                        console.log('PaddleOCR Standard:', progress.message);
                     }),
                     tesseractOCREngine.initialize((progress) => {
                         console.log('Tesseract:', progress.message);
@@ -336,9 +341,11 @@
                 const configs = [
                     { name: 'Tesseract (Baseline)', engine: 'tesseract', class: 'tesseract' },
                     { name: 'PaddleOCR Standard', engine: 'paddle', mode: 'standard', class: 'standard' },
+                    { name: 'PaddleOCR Improved', engine: 'paddle', mode: 'improved', class: 'standard' },
                     { name: 'PaddleOCR Infographic', engine: 'paddle', mode: 'infographic', class: 'infographic' },
                     { name: 'PaddleOCR Document', engine: 'paddle', mode: 'document', class: 'document' },
-                    { name: 'PaddleOCR Receipt', engine: 'paddle', mode: 'receipt', class: 'receipt' }
+                    { name: 'PaddleOCR Receipt', engine: 'paddle', mode: 'receipt', class: 'receipt' },
+                    { name: 'PaddleOCR PDF', engine: 'paddle', mode: 'pdf', class: 'receipt' }
                 ];
                 
                 for (const config of configs) {
@@ -367,17 +374,24 @@
                 if (config.engine === 'tesseract') {
                     results = await tesseractOCREngine.process(blob);
                 } else {
-                    // Apply configuration
-                    if (config.mode === 'infographic') {
+                    // Select engine and apply configuration
+                    let engine = ppOCRImprovedEngine;
+                    
+                    if (config.mode === 'standard') {
+                        engine = ppOCREngine;
+                    } else if (config.mode === 'improved') {
+                        engine = ppOCRImprovedEngine;
+                    } else if (config.mode === 'infographic') {
                         updatePaddleOCRConfig(ppOCRImprovedEngine);
                     } else if (config.mode === 'document') {
                         updatePaddleOCRForDocuments(ppOCRImprovedEngine, 'general');
                     } else if (config.mode === 'receipt') {
                         updatePaddleOCRForDocuments(ppOCRImprovedEngine, 'receipt');
+                    } else if (config.mode === 'pdf') {
+                        updatePaddleOCRForPDF(ppOCRImprovedEngine);
                     }
-                    // For standard mode, use default configuration
                     
-                    results = await ppOCRImprovedEngine.process(blob);
+                    results = await engine.process(blob);
                 }
             } catch (error) {
                 console.error(`${config.name} error:`, error);

@@ -3,6 +3,7 @@ import { ppOCREngine } from './ppocr-onnx-engine.js';
 import { tesseractOCREngine } from './tesseract-ocr-engine.js';
 import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './infographic-ocr-config.js';
 import { DOCUMENT_OCR_CONFIG, updatePaddleOCRForDocuments, extractReceiptFields } from './document-ocr-config.js';
+import { PDF_OCR_CONFIG, updatePaddleOCRForPDF, extractPDFStructure, createPDFSearchHighlighter } from './pdf-ocr-config.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import './style.css';
 
@@ -17,6 +18,7 @@ let currentOCREngine = tesseractOCREngine;
 let infographicMode = false; // Flag for infographic optimization
 let documentMode = false; // Flag for document optimization
 let receiptMode = false; // Flag for receipt optimization
+let pdfMode = false; // Flag for PDF optimization
 
 // Add getter to prevent external modification
 Object.defineProperty(window, 'currentEngine', {
@@ -981,6 +983,37 @@ function handleReceiptModeChange(event) {
     } else if (!receiptMode && currentEngine === 'paddle') {
         // Reset to default configuration
         showStatus('Receipt mode disabled', 'info');
+    }
+}
+
+// Handle PDF mode change
+function handlePDFModeChange(event) {
+    pdfMode = event.target.checked;
+    console.log('PDF mode:', pdfMode ? 'enabled' : 'disabled');
+    
+    // Disable other modes if PDF mode is enabled
+    if (pdfMode) {
+        if (infographicMode) {
+            infographicMode = false;
+            document.getElementById('infographicMode').checked = false;
+        }
+        if (documentMode) {
+            documentMode = false;
+            document.getElementById('documentMode').checked = false;
+        }
+        if (receiptMode) {
+            receiptMode = false;
+            document.getElementById('receiptMode').checked = false;
+        }
+    }
+    
+    if (pdfMode && currentEngine === 'paddle') {
+        // Apply optimized configuration for PDFs
+        updatePaddleOCRForPDF(currentOCREngine);
+        showStatus('PDF mode enabled - optimized for PDF documents with structure extraction', 'info');
+    } else if (!pdfMode && currentEngine === 'paddle') {
+        // Reset to default configuration
+        showStatus('PDF mode disabled', 'info');
     }
 }
 
