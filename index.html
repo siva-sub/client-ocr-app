@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client-Side OCR Web Application</title>
-  <script type="module" crossorigin src="/client-ocr-app/assets/index-BMj3uyOL.js"></script>
+  <script type="module" crossorigin src="/client-ocr-app/assets/index-DulwUonZ.js"></script>
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/onnxruntime-CqRzMC93.js">
-  <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/pdfjs-BhC3vFUT.js">
-  <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-D0j7zsYg.css">
+  <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/pdfjs-2tDPGsej.js">
+  <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-D7E1e6Gw.css">
 </head>
 <body>
-    <div id="app">
+    <div id="app" class="container">
         <header>
             <h1>🔍 Client-Side OCR Web Application</h1>
             <p>Advanced browser-based OCR with PaddleOCR and Tesseract.js - Extract text from images and PDFs with optimized configurations!</p>
@@ -33,8 +33,8 @@
                     
                     <input type="radio" id="enginePaddle" name="ocrEngine" value="paddle">
                     <label for="enginePaddle">
-                        <span class="engine-name">PaddleOCR v5 (Experimental)</span>
-                        <span class="engine-desc">Mobile models via ONNX Runtime - Lower accuracy</span>
+                        <span class="engine-name">PaddleOCR (ONNX)</span>
+                        <span class="engine-desc">High-performance models via ONNX Runtime</span>
                     </label>
                 </div>
                 
@@ -104,9 +104,19 @@
                     </div>
                     
                     <div class="model-selection">
+                        <h4>Model Version</h4>
+                        <select id="modelVersion" class="model-select">
+                            <option value="PP-OCRv5" selected>PP-OCRv5 (Latest)</option>
+                            <option value="PP-OCRv4">PP-OCRv4</option>
+                            <option value="ch_ppocr_server_v2.0">Server v2.0 (High Accuracy)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="model-selection">
                         <label for="detectionModel">Detection Model:</label>
                         <select id="detectionModel">
                             <option value="PP-OCRv5_mobile_det_infer.onnx" selected>PP-OCRv5 Mobile (4.7MB)</option>
+                            <option value="PP-OCRv5_server_det_infer.onnx">PP-OCRv5 Server (47MB)</option>
                         </select>
                     </div>
                     <div class="model-selection">
@@ -114,6 +124,7 @@
                         <select id="recognitionModel">
                             <option value="en_PP-OCRv4_mobile_rec_infer.onnx" selected>PP-OCRv4 English (7.4MB)</option>
                             <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Multilingual (16MB)</option>
+                            <option value="PP-OCRv5_server_rec_infer.onnx">PP-OCRv5 Server (71MB)</option>
                         </select>
                     </div>
                     <div class="model-selection">
@@ -128,15 +139,21 @@
             </section>
 
             <section class="upload-section">
-                <div id="uploadArea" class="upload-area">
+                <div id="uploadArea" class="upload-area drop-zone">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    <p>Drop an image or PDF here or click to upload</p>
+                    <p>Drop images or PDFs here or click to upload (Multiple files supported)</p>
                     <p class="file-types">Supports: JPG, PNG, WebP, PDF</p>
-                    <input type="file" id="fileInput" accept="image/*,application/pdf" hidden>
+                    <input type="file" id="fileInput" accept="image/*,application/pdf" multiple hidden>
+                </div>
+                
+                <div id="fileList" class="file-list" style="display: none;">
+                    <h3>Selected Files:</h3>
+                    <ul id="fileListItems"></ul>
+                    <button id="clearFilesBtn" class="clear-btn">Clear Files</button>
                 </div>
             </section>
 
@@ -148,6 +165,14 @@
                 <button id="processBtn" class="process-btn">Extract Text</button>
             </section>
 
+            <section id="progressArea" class="progress-area" style="display: none;">
+                <div id="progressText" class="progress-text"></div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div id="elapsedTime" class="elapsed-time"></div>
+            </section>
+
             <section id="resultsSection" class="results-section" style="display: none;">
                 <h2>Extracted Text</h2>
                 <div id="loadingIndicator" class="loading" style="display: none;">
@@ -156,8 +181,8 @@
                 </div>
                 <div id="ocrResults" class="ocr-results"></div>
                 <div class="actions">
-                    <button id="copyBtn" class="action-btn">📋 Copy Text</button>
-                    <button id="downloadBtn" class="action-btn">💾 Download</button>
+                    <button id="copyBtn" class="action-btn">📋 Copy All Text</button>
+                    <button id="downloadBtn" class="action-btn">💾 Download All (ZIP)</button>
                     <button id="resetBtn" class="action-btn">🔄 New Image</button>
                 </div>
             </section>
@@ -169,6 +194,9 @@
             <p class="acknowledgment">Special thanks to <a href="https://huggingface.co/spaces/SWHL/PaddleOCRModelConverter" target="_blank">SWHL's PaddleOCR Model Converter</a> for enabling ONNX model conversion</p>
         </footer>
     </div>
+    
+    <!-- Global tip notification -->
+    <div id="globalTip" class="global-tip" style="display:none;"></div>
 
 </body>
 </html>
