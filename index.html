@@ -3,200 +3,984 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client-Side OCR Web Application</title>
-    <link rel="stylesheet" href="/src/style.css">
-    <link rel="stylesheet" href="/src/style-config.css">
-    <link rel="stylesheet" href="/src/style-modern.css">
+    <title>Smart OCR - AI-Powered Text Recognition</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a1b1e">
+    <meta name="description" content="Advanced OCR application with multiple engines and AI-powered text recognition">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    
+    <!-- Mantine UI CSS -->
+    <style>
+        /* CSS Variables for Mantine-like styling */
+        :root {
+            --mantine-color-body: #1a1b1e;
+            --mantine-color-dark-7: #1a1b1e;
+            --mantine-color-dark-6: #25262b;
+            --mantine-color-dark-5: #2c2e33;
+            --mantine-color-dark-4: #373a40;
+            --mantine-color-dark-3: #495057;
+            --mantine-color-dark-2: #6c757d;
+            --mantine-color-dark-1: #adb5bd;
+            --mantine-color-dark-0: #ced4da;
+            --mantine-color-blue-6: #228be6;
+            --mantine-color-blue-7: #1c7ed6;
+            --mantine-color-blue-light: #4dabf7;
+            --mantine-radius-md: 8px;
+            --mantine-radius-lg: 16px;
+            --mantine-spacing-xs: 0.625rem;
+            --mantine-spacing-sm: 0.75rem;
+            --mantine-spacing-md: 1rem;
+            --mantine-spacing-lg: 1.25rem;
+            --mantine-spacing-xl: 1.5rem;
+            --mantine-transition: all 200ms ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--mantine-color-body);
+            color: var(--mantine-color-dark-0);
+            line-height: 1.55;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* App Shell */
+        .app-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--mantine-color-dark-6);
+            padding: var(--mantine-spacing-md) var(--mantine-spacing-xl);
+            border-bottom: 1px solid var(--mantine-color-dark-4);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--mantine-spacing-sm);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: var(--mantine-spacing-xl);
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Paper Component */
+        .paper {
+            background-color: var(--mantine-color-dark-6);
+            border-radius: var(--mantine-radius-md);
+            padding: var(--mantine-spacing-lg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            margin-bottom: var(--mantine-spacing-lg);
+        }
+
+        /* Dropzone */
+        .dropzone {
+            border: 2px dashed var(--mantine-color-dark-3);
+            border-radius: var(--mantine-radius-md);
+            padding: var(--mantine-spacing-xl) var(--mantine-spacing-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--mantine-transition);
+            background-color: var(--mantine-color-dark-5);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropzone:hover {
+            border-color: var(--mantine-color-blue-6);
+            background-color: rgba(34, 139, 230, 0.05);
+        }
+
+        .dropzone.active {
+            border-color: var(--mantine-color-blue-6);
+            background-color: rgba(34, 139, 230, 0.1);
+        }
+
+        .dropzone-icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: var(--mantine-spacing-md);
+            opacity: 0.6;
+        }
+
+        .dropzone-text {
+            font-size: 1.125rem;
+            margin-bottom: var(--mantine-spacing-xs);
+        }
+
+        .dropzone-hint {
+            font-size: 0.875rem;
+            color: var(--mantine-color-dark-2);
+        }
+
+        /* Buttons */
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 var(--mantine-spacing-lg);
+            height: 42px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: var(--mantine-radius-md);
+            border: none;
+            cursor: pointer;
+            transition: var(--mantine-transition);
+            text-decoration: none;
+            gap: var(--mantine-spacing-xs);
+        }
+
+        .button-primary {
+            background-color: var(--mantine-color-blue-6);
+            color: white;
+        }
+
+        .button-primary:hover {
+            background-color: var(--mantine-color-blue-7);
+        }
+
+        .button-subtle {
+            background-color: transparent;
+            color: var(--mantine-color-dark-0);
+        }
+
+        .button-subtle:hover {
+            background-color: var(--mantine-color-dark-5);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Select */
+        .select {
+            width: 100%;
+            padding: 0 var(--mantine-spacing-md);
+            height: 42px;
+            background-color: var(--mantine-color-dark-5);
+            border: 1px solid var(--mantine-color-dark-4);
+            border-radius: var(--mantine-radius-md);
+            color: var(--mantine-color-dark-0);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--mantine-transition);
+        }
+
+        .select:hover {
+            border-color: var(--mantine-color-dark-3);
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: var(--mantine-color-blue-6);
+        }
+
+        /* Grid System */
+        .grid {
+            display: grid;
+            gap: var(--mantine-spacing-lg);
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 768px) {
+            .grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Progress Bar */
+        .progress {
+            width: 100%;
+            height: 8px;
+            background-color: var(--mantine-color-dark-4);
+            border-radius: var(--mantine-radius-md);
+            overflow: hidden;
+            margin-bottom: var(--mantine-spacing-xs);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--mantine-color-blue-6);
+            transition: width 300ms ease;
+        }
+
+        .progress-label {
+            font-size: 0.75rem;
+            color: var(--mantine-color-dark-2);
+            margin-bottom: var(--mantine-spacing-sm);
+        }
+
+        /* Results Container */
+        .results-container {
+            display: none;
+        }
+
+        .result-item {
+            background-color: var(--mantine-color-dark-5);
+            border-radius: var(--mantine-radius-md);
+            padding: var(--mantine-spacing-md);
+            margin-bottom: var(--mantine-spacing-md);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--mantine-spacing-sm);
+        }
+
+        .result-filename {
+            font-weight: 600;
+            color: var(--mantine-color-blue-light);
+        }
+
+        .result-text {
+            background-color: var(--mantine-color-dark-7);
+            border-radius: var(--mantine-radius-md);
+            padding: var(--mantine-spacing-md);
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Tabs */
+        .tabs {
+            margin-bottom: var(--mantine-spacing-lg);
+        }
+
+        .tabs-list {
+            display: flex;
+            gap: var(--mantine-spacing-xs);
+            border-bottom: 2px solid var(--mantine-color-dark-4);
+            margin-bottom: var(--mantine-spacing-lg);
+        }
+
+        .tab {
+            padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+            background: none;
+            border: none;
+            color: var(--mantine-color-dark-1);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--mantine-transition);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: var(--mantine-color-dark-0);
+        }
+
+        .tab.active {
+            color: var(--mantine-color-blue-6);
+            border-bottom-color: var(--mantine-color-blue-6);
+        }
+
+        /* Settings Panel */
+        .settings-group {
+            margin-bottom: var(--mantine-spacing-lg);
+        }
+
+        .settings-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: var(--mantine-spacing-xs);
+            color: var(--mantine-color-dark-1);
+        }
+
+        /* Switch */
+        .switch {
+            display: flex;
+            align-items: center;
+            gap: var(--mantine-spacing-sm);
+            cursor: pointer;
+        }
+
+        .switch-input {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background-color: var(--mantine-color-dark-4);
+            border-radius: 20px;
+            transition: var(--mantine-transition);
+        }
+
+        .switch-input::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--mantine-transition);
+        }
+
+        .switch input:checked + .switch-input {
+            background-color: var(--mantine-color-blue-6);
+        }
+
+        .switch input:checked + .switch-input::after {
+            left: 22px;
+        }
+
+        .switch input {
+            display: none;
+        }
+
+        /* Image Preview */
+        .image-preview {
+            position: relative;
+            max-width: 100%;
+            margin-bottom: var(--mantine-spacing-lg);
+        }
+
+        .image-preview img {
+            width: 100%;
+            border-radius: var(--mantine-radius-md);
+        }
+
+        .image-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* File List */
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--mantine-spacing-xs);
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--mantine-spacing-sm);
+            background-color: var(--mantine-color-dark-5);
+            border-radius: var(--mantine-radius-md);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: var(--mantine-spacing-sm);
+        }
+
+        .file-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.6;
+        }
+
+        .file-name {
+            font-size: 0.875rem;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--mantine-color-dark-2);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            bottom: var(--mantine-spacing-lg);
+            right: var(--mantine-spacing-lg);
+            background-color: var(--mantine-color-dark-6);
+            border-radius: var(--mantine-radius-md);
+            padding: var(--mantine-spacing-md);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: var(--mantine-spacing-sm);
+            min-width: 300px;
+            animation: slideIn 300ms ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-success {
+            border-left: 3px solid #40c057;
+        }
+
+        .notification-error {
+            border-left: 3px solid #fa5252;
+        }
+
+        .notification-info {
+            border-left: 3px solid #339af0;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: var(--mantine-spacing-md);
+            }
+
+            .header {
+                padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+            }
+
+            .notification {
+                left: var(--mantine-spacing-md);
+                right: var(--mantine-spacing-md);
+                bottom: var(--mantine-spacing-md);
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--mantine-color-dark-3);
+            border-top-color: var(--mantine-color-blue-6);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
-    <div id="app" class="container">
-        <header>
-            <h1>🔍 Client-Side OCR Web Application</h1>
-            <p>Advanced browser-based OCR with PaddleOCR and Tesseract.js - Extract text from images and PDFs with optimized configurations!</p>
-            <div id="status" class="status info">Initializing...</div>
-            <p class="advanced-features-note">
-                <small>🔬 Advanced PDF features (table parsing, layout detection, formula recognition) available via 
-                <a href="https://github.com/siva-sub/client-ocr-app/tree/main/public/scripts" target="_blank">server-side scripts</a></small>
-            </p>
+    <div class="app-shell">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zM20 11h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zM9 22H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zM20 22h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1z"/>
+                    </svg>
+                    Smart OCR
+                </div>
+                <div class="header-actions">
+                    <button class="button button-subtle" id="settingsBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                        </svg>
+                        Settings
+                    </button>
+                </div>
+            </div>
         </header>
 
-        <main>
-            <section class="engine-selection">
-                <h2>Select OCR Engine</h2>
-                <div class="engine-toggle">
-                    <input type="radio" id="engineTesseract" name="ocrEngine" value="tesseract" checked>
-                    <label for="engineTesseract">
-                        <span class="engine-name">Tesseract.js (Recommended)</span>
-                        <span class="engine-desc">Mature OCR engine - Better accuracy for English</span>
-                    </label>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <div class="paper">
+                <div class="tabs">
+                    <div class="tabs-list">
+                        <button class="tab active" data-tab="upload">Upload</button>
+                        <button class="tab" data-tab="camera">Camera</button>
+                        <button class="tab" data-tab="url">URL</button>
+                    </div>
                     
-                    <input type="radio" id="enginePaddle" name="ocrEngine" value="paddle">
-                    <label for="enginePaddle">
-                        <span class="engine-name">PaddleOCR (ONNX)</span>
-                        <span class="engine-desc">High-performance models via ONNX Runtime</span>
-                    </label>
-                </div>
-                
-                <div id="paddleOptions" class="engine-options" style="display: none;">
-                    <h3>PaddleOCR Options</h3>
-                    
-                    <div class="preprocessing-toggle">
-                        <h4>Preprocessing Method</h4>
-                        <div class="radio-group">
-                            <input type="radio" id="preprocessStandard" name="preprocessing" value="standard">
-                            <label for="preprocessStandard">
-                                <span class="option-name">Standard</span>
-                                <span class="option-desc">Default PaddleOCR preprocessing</span>
-                            </label>
-                            
-                            <input type="radio" id="preprocessImproved" name="preprocessing" value="improved" checked>
-                            <label for="preprocessImproved">
-                                <span class="option-name">Improved (PPU)</span>
-                                <span class="option-desc">Enhanced preprocessing with better text detection</span>
-                            </label>
+                    <div class="tab-content" data-content="upload">
+                        <div class="dropzone" id="dropzone">
+                            <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            <div class="dropzone-text">Drop files here or click to upload</div>
+                            <div class="dropzone-hint">Support for images, PDFs, and documents</div>
+                            <input type="file" id="fileInput" multiple accept="image/*,.pdf" style="display: none;">
                         </div>
                     </div>
-                    
-                    <div class="config-selection">
-                        <h4>Configuration Preset</h4>
-                        <select id="configPreset" class="config-select">
-                            <option value="GENERAL_TEXT">General Text (Balanced)</option>
-                            <option value="INFOGRAPHIC_OPTIMIZED">Infographic (Complex Layouts)</option>
-                            <option value="DOCUMENT_OPTIMIZED">Official Documents</option>
-                            <option value="RECEIPT_OPTIMIZED" selected>Receipts (Thermal Print)</option>
-                            <option value="ID_CARD_OPTIMIZED">ID Cards</option>
-                            <option value="PDF_OPTIMIZED">PDFs (Multi-page)</option>
-                        </select>
-                        <p class="config-desc">Pre-tuned configurations optimized for specific document types</p>
-                    </div>
-                    
-                    <div class="infographic-mode">
-                        <h4>Document Type</h4>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="infographicMode" name="infographicMode">
-                            <label for="infographicMode">
-                                <span class="option-name">Infographic Mode</span>
-                                <span class="option-desc">Optimized for complex layouts, diagrams, and multi-region documents</span>
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="documentMode" name="documentMode">
-                            <label for="documentMode">
-                                <span class="option-name">Document Mode</span>
-                                <span class="option-desc">Optimized for official documents, ID cards, and banking forms</span>
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="receiptMode" name="receiptMode">
-                            <label for="receiptMode">
-                                <span class="option-name">Receipt Mode</span>
-                                <span class="option-desc">Optimized for receipts with thermal printing and price extraction</span>
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="pdfMode" name="pdfMode">
-                            <label for="pdfMode">
-                                <span class="option-name">PDF Mode</span>
-                                <span class="option-desc">Optimized for PDF documents with structure extraction and search</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="model-selection">
-                        <h4>Model Version</h4>
-                        <select id="modelVersion" class="model-select">
-                            <option value="PP-OCRv5" selected>PP-OCRv5 (Latest)</option>
-                            <option value="PP-OCRv4">PP-OCRv4</option>
-                            <option value="ch_ppocr_server_v2.0">Server v2.0 (High Accuracy)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="model-selection">
-                        <label for="detectionModel">Detection Model:</label>
-                        <select id="detectionModel">
-                            <option value="PP-OCRv5_mobile_det_infer.onnx" selected>PP-OCRv5 Mobile (4.7MB)</option>
-                            <option value="PP-OCRv5_server_det_infer.onnx">PP-OCRv5 Server (47MB)</option>
-                        </select>
-                    </div>
-                    <div class="model-selection">
-                        <label for="recognitionModel">Recognition Model:</label>
-                        <select id="recognitionModel">
-                            <option value="en_PP-OCRv4_mobile_rec_infer.onnx" selected>PP-OCRv4 English (7.4MB)</option>
-                            <option value="PP-OCRv5_mobile_rec_infer.onnx">PP-OCRv5 Multilingual (16MB)</option>
-                            <option value="PP-OCRv5_server_rec_infer.onnx">PP-OCRv5 Server (71MB)</option>
-                        </select>
-                    </div>
-                    <div class="model-selection">
-                        <label for="dictionary">Dictionary:</label>
-                        <select id="dictionary">
-                            <option value="en_dict.txt" selected>English (95 chars)</option>
-                            <option value="ppocr_keys_v1.txt">PP-OCR Multilingual (6623 chars)</option>
-                            <option value="ppocrv5_dict.txt">PP-OCRv5 Extended (6623 chars)</option>
-                        </select>
-                    </div>
-                </div>
-            </section>
 
-            <section class="upload-section">
-                <div id="uploadArea" class="upload-area drop-zone">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    <div class="tab-content hidden" data-content="camera">
+                        <div style="text-align: center; padding: var(--mantine-spacing-xl);">
+                            <button class="button button-primary" id="cameraBtn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                Open Camera
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content hidden" data-content="url">
+                        <div style="display: flex; gap: var(--mantine-spacing-sm);">
+                            <input type="url" class="select" style="flex: 1;" placeholder="Enter image URL" id="urlInput">
+                            <button class="button button-primary" id="fetchUrlBtn">Fetch</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File List -->
+                <div class="file-list hidden" id="fileList"></div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="paper">
+                <div class="grid grid-cols-2">
+                    <div class="settings-group">
+                        <div class="settings-label">OCR Engine</div>
+                        <select class="select" id="engineSelect">
+                            <option value="tesseract">Tesseract OCR</option>
+                            <option value="paddleocr" selected>PaddleOCR</option>
+                            <option value="ppocr-v5">PP-OCRv5 Enhanced</option>
+                        </select>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <div class="settings-label">Model Version</div>
+                        <select class="select" id="modelSelect">
+                            <optgroup label="Server Models (Higher Accuracy)">
+                                <option value="PP-OCRv5" selected>PP-OCRv5 (Latest)</option>
+                                <option value="PP-OCRv4">PP-OCRv4</option>
+                                <option value="ch_ppocr_server_v2.0">Server v2.0</option>
+                            </optgroup>
+                            <optgroup label="Mobile Models (Faster)">
+                                <option value="PP-OCRv5_mobile">PP-OCRv5 Mobile</option>
+                                <option value="PP-OCRv4_mobile">PP-OCRv4 Mobile</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-label">Preset Configuration</div>
+                    <select class="select" id="presetSelect">
+                        <option value="balanced" selected>Balanced (Default)</option>
+                        <option value="high_accuracy">High Accuracy</option>
+                        <option value="fast_processing">Fast Processing</option>
+                        <option value="handwritten">Handwritten Text</option>
+                        <option value="low_quality">Low Quality Images</option>
+                        <option value="custom">Custom Settings</option>
+                    </select>
+                </div>
+
+                <div class="settings-group">
+                    <label class="switch">
+                        <input type="checkbox" id="angleClassification" checked>
+                        <span class="switch-input"></span>
+                        <span>Enable Angle Classification</span>
+                    </label>
+                </div>
+
+                <div class="settings-group">
+                    <label class="switch">
+                        <input type="checkbox" id="cacheResults" checked>
+                        <span class="switch-input"></span>
+                        <span>Cache Results</span>
+                    </label>
+                </div>
+
+                <button class="button button-primary" id="processBtn" style="width: 100%;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                     </svg>
-                    <p>Drop images or PDFs here or click to upload (Multiple files supported)</p>
-                    <p class="file-types">Supports: JPG, PNG, WebP, PDF</p>
-                    <input type="file" id="fileInput" accept="image/*,application/pdf" multiple hidden>
-                </div>
-                
-                <div id="fileList" class="file-list" style="display: none;">
-                    <h3>Selected Files:</h3>
-                    <ul id="fileListItems"></ul>
-                    <button id="clearFilesBtn" class="clear-btn">Clear Files</button>
-                </div>
-            </section>
+                    Process Images
+                </button>
+            </div>
 
-            <section id="previewSection" class="preview-section" style="display: none;">
-                <h2>Image Preview</h2>
-                <div class="preview-container">
-                    <img id="previewImage" alt="Preview">
-                </div>
-                <button id="processBtn" class="process-btn">Extract Text</button>
-            </section>
-
-            <section id="progressArea" class="progress-area" style="display: none;">
-                <div id="progressText" class="progress-text"></div>
-                <div class="progress-bar-bg">
+            <!-- Progress Section -->
+            <div class="paper hidden" id="progressSection">
+                <div class="progress-label" id="progressLabel">Processing...</div>
+                <div class="progress">
                     <div class="progress-bar" id="progressBar"></div>
                 </div>
-                <div id="elapsedTime" class="elapsed-time"></div>
-            </section>
+            </div>
 
-            <section id="resultsSection" class="results-section" style="display: none;">
-                <h2>Extracted Text</h2>
-                <div id="loadingIndicator" class="loading" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Processing image...</p>
+            <!-- Results Section -->
+            <div class="results-container" id="resultsContainer">
+                <div class="paper">
+                    <div class="result-header">
+                        <h2>OCR Results</h2>
+                        <button class="button button-primary" id="downloadAllBtn">
+                            Download All
+                        </button>
+                    </div>
+                    <div id="resultsList"></div>
                 </div>
-                <div id="ocrResults" class="ocr-results"></div>
-                <div class="actions">
-                    <button id="copyBtn" class="action-btn">📋 Copy All Text</button>
-                    <button id="downloadBtn" class="action-btn">💾 Download All (ZIP)</button>
-                    <button id="resetBtn" class="action-btn">🔄 New Image</button>
-                </div>
-            </section>
+            </div>
         </main>
-
-        <footer>
-            <p>Created by <a href="https://github.com/siva-sub" target="_blank">Siva Sub</a> | 
-               <a href="https://www.linkedin.com/in/sivasub987" target="_blank">LinkedIn</a></p>
-            <p class="acknowledgment">Special thanks to <a href="https://huggingface.co/spaces/SWHL/PaddleOCRModelConverter" target="_blank">SWHL's PaddleOCR Model Converter</a> for enabling ONNX model conversion</p>
-        </footer>
     </div>
-    
-    <!-- Global tip notification -->
-    <div id="globalTip" class="global-tip" style="display:none;"></div>
 
-    <script type="module" src="/src/main.js"></script>
+    <!-- Scripts -->
+    <script type="module">
+        import { ocrCache } from './src/ocr-cache-manager.js';
+        import { PPOCRv5OnnxEngine } from './src/ppocr-v5-onnx-engine.js';
+        import { AdvancedOCROptions } from './src/onnx-ocr-advanced.js';
+        import './src/main-mantine.js';
+        
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swPath = window.location.hostname.includes('github.io') ? '/client-ocr-app/sw.js' : '/sw.js';
+                navigator.serviceWorker.register(swPath)
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showNotification('New version available! Reload to update.', 'info');
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+        
+        // UI Elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const processBtn = document.getElementById('processBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressLabel = document.getElementById('progressLabel');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsList = document.getElementById('resultsList');
+        
+        let selectedFiles = [];
+        let currentEngine = null;
+        
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.toggle('hidden', content.dataset.content !== tabName);
+                });
+            });
+        });
+        
+        // Dropzone functionality
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('active');
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('active');
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('active');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            updateFileList();
+        }
+        
+        function updateFileList() {
+            if (selectedFiles.length === 0) {
+                fileList.classList.add('hidden');
+                return;
+            }
+            
+            fileList.classList.remove('hidden');
+            fileList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <button class="button button-subtle" onclick="removeFile(${index})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        window.removeFile = function(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        };
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Process button
+        processBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) {
+                showNotification('Please select files to process', 'error');
+                return;
+            }
+            
+            const engineType = document.getElementById('engineSelect').value;
+            const modelVersion = document.getElementById('modelSelect').value;
+            const presetName = document.getElementById('presetSelect').value;
+            const useAngleCls = document.getElementById('angleClassification').checked;
+            const useCache = document.getElementById('cacheResults').checked;
+            
+            progressSection.classList.remove('hidden');
+            resultsContainer.style.display = 'none';
+            resultsList.innerHTML = '';
+            
+            const results = [];
+            
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                updateProgress((i / selectedFiles.length) * 100, `Processing ${file.name}...`);
+                
+                try {
+                    // Check cache first
+                    let result = null;
+                    if (useCache) {
+                        const fileData = await fileToBase64(file);
+                        result = ocrCache.get(fileData, engineType, modelVersion);
+                    }
+                    
+                    if (!result) {
+                        // Process the file based on engine type
+                        if (engineType === 'tesseract') {
+                            result = await window.OCREngine.processWithTesseract(file, (msg) => {
+                                updateProgress((i / selectedFiles.length) * 100, msg);
+                            });
+                        } else if (engineType === 'paddleocr') {
+                            const options = {
+                                preset: presetName,
+                                preprocessing: 'improved',
+                                modelVersion: modelVersion
+                            };
+                            result = await window.OCREngine.processWithPaddleOCR(file, options, (msg) => {
+                                updateProgress((i / selectedFiles.length) * 100, msg);
+                            });
+                        } else if (engineType === 'ppocr-v5') {
+                            // Get preset options
+                            const options = presetName !== 'custom' 
+                                ? AdvancedOCROptions.mergeWithPreset(presetName, { 
+                                    modelName: modelVersion,
+                                    useAngleCls: useAngleCls,
+                                    useCache: useCache
+                                })
+                                : {
+                                    modelName: modelVersion,
+                                    useAngleCls: useAngleCls,
+                                    useCache: useCache
+                                };
+                            
+                            if (!currentEngine || currentEngine.modelName !== modelVersion) {
+                                currentEngine = new PPOCRv5OnnxEngine(options);
+                                await currentEngine.initialize((msg) => {
+                                    updateProgress((i / selectedFiles.length) * 100, msg);
+                                });
+                            }
+                            
+                            result = await currentEngine.process(file, (msg) => {
+                                updateProgress((i / selectedFiles.length) * 100, msg);
+                            });
+                        }
+                        
+                        // Cache the result
+                        if (useCache && result) {
+                            const fileData = await fileToBase64(file);
+                            ocrCache.set(fileData, engineType, modelVersion, result);
+                        }
+                    }
+                    
+                    results.push({
+                        filename: file.name,
+                        text: result?.text || 'No text detected',
+                        boxes: result?.boxes || []
+                    });
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    results.push({
+                        filename: file.name,
+                        text: `Error: ${error.message}`,
+                        boxes: []
+                    });
+                }
+            }
+            
+            updateProgress(100, 'Processing complete!');
+            displayResults(results);
+            
+            setTimeout(() => {
+                progressSection.classList.add('hidden');
+            }, 1000);
+        });
+        
+        function updateProgress(percent, label) {
+            progressBar.style.width = percent + '%';
+            progressLabel.textContent = label;
+        }
+        
+        function displayResults(results) {
+            resultsContainer.style.display = 'block';
+            resultsList.innerHTML = results.map((result, index) => `
+                <div class="result-item">
+                    <div class="result-header">
+                        <span class="result-filename">${result.filename}</span>
+                        <button class="button button-subtle" onclick="copyText(${index})">
+                            Copy Text
+                        </button>
+                    </div>
+                    <div class="result-text">${result.text}</div>
+                </div>
+            `).join('');
+            
+            window.results = results;
+        }
+        
+        window.copyText = function(index) {
+            const text = window.results[index].text;
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Text copied to clipboard', 'success');
+            });
+        };
+        
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${type === 'success' 
+                        ? '<polyline points="20 6 9 17 4 12"/>' 
+                        : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'}
+                </svg>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Download all results
+        document.getElementById('downloadAllBtn').addEventListener('click', () => {
+            if (!window.results || window.results.length === 0) return;
+            
+            const allText = window.results.map(r => `=== ${r.filename} ===\n\n${r.text}\n\n`).join('\n');
+            const blob = new Blob([allText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ocr-results.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        // Initialize
+        showNotification('Smart OCR ready!', 'success');
+    </script>
 </body>
 </html>

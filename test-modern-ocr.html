@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modern OCR</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background: #228be6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1c7ed6;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+        .error {
+            color: #e03131;
+        }
+        .success {
+            color: #2f9e44;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Modern OCR with PP-OCRv5 ONNX Engine</h1>
+        
+        <div>
+            <button id="testCacheBtn">Test Cache Manager</button>
+            <button id="testEngineBtn">Test PP-OCRv5 Engine</button>
+            <button id="testPWABtn">Test PWA Features</button>
+            <button id="openModernUIBtn">Open Modern UI</button>
+        </div>
+        
+        <div id="output"></div>
+    </div>
+    
+    <script type="module">
+        import { ocrCache } from './src/ocr-cache-manager.js';
+        import { ppOCRv5OnnxEngine } from './src/ppocr-v5-onnx-engine.js';
+        
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+        }
+        
+        // Test Cache Manager
+        document.getElementById('testCacheBtn').addEventListener('click', async () => {
+            try {
+                log('Testing OCR Cache Manager...');
+                
+                // Test cache operations
+                const testData = 'test-image-data';
+                const testResult = { text: 'Test OCR result', boxes: [] };
+                
+                // Set cache
+                const cacheKey = ocrCache.set(testData, 'test-engine', 'v1', testResult);
+                log(`✓ Cache set with key: ${cacheKey}`, 'success');
+                
+                // Get cache
+                const retrieved = ocrCache.get(testData, 'test-engine', 'v1');
+                log(`✓ Cache retrieved: ${JSON.stringify(retrieved)}`, 'success');
+                
+                // Get stats
+                const stats = ocrCache.getStats();
+                log(`✓ Cache stats: ${JSON.stringify(stats)}`, 'success');
+                
+            } catch (error) {
+                log(`✗ Cache test failed: ${error.message}`, 'error');
+            }
+        });
+        
+        // Test PP-OCRv5 Engine
+        document.getElementById('testEngineBtn').addEventListener('click', async () => {
+            try {
+                log('Testing PP-OCRv5 ONNX Engine...');
+                
+                // Initialize engine
+                log('Initializing engine...');
+                await ppOCRv5OnnxEngine.initialize((msg) => log(msg));
+                log('✓ Engine initialized', 'success');
+                
+                // Create test image
+                const canvas = document.createElement('canvas');
+                canvas.width = 200;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, 200, 100);
+                ctx.fillStyle = 'black';
+                ctx.font = '24px Arial';
+                ctx.fillText('Test OCR', 50, 50);
+                
+                // Process image
+                log('Processing test image...');
+                const result = await ppOCRv5OnnxEngine.process(canvas, (msg) => log(msg));
+                log(`✓ OCR Result: ${JSON.stringify(result)}`, 'success');
+                
+            } catch (error) {
+                log(`✗ Engine test failed: ${error.message}`, 'error');
+                console.error(error);
+            }
+        });
+        
+        // Test PWA Features
+        document.getElementById('testPWABtn').addEventListener('click', async () => {
+            try {
+                log('Testing PWA Features...');
+                
+                // Check service worker
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        log('✓ Service Worker registered', 'success');
+                        log(`  Scope: ${registration.scope}`);
+                        log(`  State: ${registration.active?.state || 'not active'}`);
+                    } else {
+                        log('✗ Service Worker not registered', 'error');
+                    }
+                } else {
+                    log('✗ Service Worker not supported', 'error');
+                }
+                
+                // Check manifest
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink) {
+                    try {
+                        const response = await fetch(manifestLink.href);
+                        const manifest = await response.json();
+                        log('✓ Manifest loaded', 'success');
+                        log(`  Name: ${manifest.name}`);
+                        log(`  Icons: ${manifest.icons.length} icons`);
+                    } catch (error) {
+                        log('✗ Failed to load manifest', 'error');
+                    }
+                } else {
+                    log('✗ Manifest not linked', 'error');
+                }
+                
+                // Check cache storage
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    log(`✓ Cache Storage available`, 'success');
+                    log(`  Caches: ${cacheNames.join(', ') || 'none'}`);
+                } else {
+                    log('✗ Cache Storage not supported', 'error');
+                }
+                
+            } catch (error) {
+                log(`✗ PWA test failed: ${error.message}`, 'error');
+            }
+        });
+        
+        // Open Modern UI
+        document.getElementById('openModernUIBtn').addEventListener('click', () => {
+            window.open('/index-mantine.html', '_blank');
+        });
+        
+        // Initial log
+        log('Test page loaded. Click buttons to run tests.');
+    </script>
+</body>
+</html>

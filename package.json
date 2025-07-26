@@ -1,6 +1,6 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "type": "module",
   "description": "State-of-the-art browser-based OCR powered by PaddleOCR 3.0 and PP-OCRv5 with ONNX Runtime - 100% client-side text extraction from images and PDFs with intelligent caching, mobile models, PWA support, and preset configurations for various document types",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
