@@ -244,31 +244,66 @@ function analyzeImage(imageData) {
     };
 }
 
+// Map UI preset names to config names
+const PRESET_MAPPING = {
+    'balanced': 'GENERAL_TEXT',
+    'high_accuracy': 'DOCUMENT_OPTIMIZED',
+    'fast_processing': 'GENERAL_TEXT',
+    'handwritten': 'DOCUMENT_OPTIMIZED',
+    'low_quality': 'RECEIPT_OPTIMIZED'
+};
+
 // Apply optimal configuration to PaddleOCR engine
 export function applyOptimalConfig(engineInstance, configType) {
-    const config = OPTIMAL_CONFIGS[configType];
+    // Map preset name to config name
+    const mappedConfig = PRESET_MAPPING[configType] || configType;
+    
+    const config = OPTIMAL_CONFIGS[mappedConfig];
     if (!config) {
         console.error(`Unknown config type: ${configType}`);
+        // Use general text as fallback
+        const fallbackConfig = OPTIMAL_CONFIGS.GENERAL_TEXT;
+        if (fallbackConfig && engineInstance) {
+            applyConfigToEngine(engineInstance, fallbackConfig);
+        }
         return;
     }
     
+    applyConfigToEngine(engineInstance, config);
+    console.log(`Applied optimal ${configType} (mapped to ${mappedConfig}) configuration`);
+}
+
+function applyConfigToEngine(engineInstance, config) {
     // Apply detection parameters
-    Object.entries(config.detection).forEach(([key, value]) => {
-        if (engineInstance.CONFIG && engineInstance.CONFIG.hasOwnProperty(key)) {
-            engineInstance.CONFIG[key] = value;
-        } else if (engineInstance.config && engineInstance.config.hasOwnProperty(key)) {
-            engineInstance.config[key] = value;
-        }
-    });
+    if (config.detection) {
+        Object.entries(config.detection).forEach(([key, value]) => {
+            // Try different ways to set the config
+            if (engineInstance.CONFIG) {
+                engineInstance.CONFIG[key] = value;
+            }
+            if (engineInstance.config) {
+                engineInstance.config[key] = value;
+            }
+            if (engineInstance.applyConfig) {
+                engineInstance.applyConfig({ [key]: value });
+            }
+        });
+    }
     
     // Apply recognition parameters
-    Object.entries(config.recognition).forEach(([key, value]) => {
-        if (engineInstance.CONFIG && engineInstance.CONFIG.hasOwnProperty(key)) {
-            engineInstance.CONFIG[key] = value;
-        } else if (engineInstance.config && engineInstance.config.hasOwnProperty(key)) {
-            engineInstance.config[key] = value;
-        }
-    });
+    if (config.recognition) {
+        Object.entries(config.recognition).forEach(([key, value]) => {
+            if (engineInstance.CONFIG) {
+                engineInstance.CONFIG[key] = value;
+            }
+            if (engineInstance.config) {
+                engineInstance.config[key] = value;
+            }
+            if (engineInstance.applyConfig) {
+                engineInstance.applyConfig({ [key]: value });
+            }
+        });
+    }
     
     // Apply preprocessing parameters if the engine supports them
     if (config.preprocessing && engineInstance.preprocessingOptions) {
@@ -278,8 +313,6 @@ export function applyOptimalConfig(engineInstance, configType) {
             }
         });
     }
-    
-    console.log(`Applied optimal ${configType} configuration`);
 }
 
 // Performance testing utility

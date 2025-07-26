@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2025-07-26
+
+### Added
+- **OnnxOCR Engine Implementation**: Complete implementation based on https://github.com/jingsongliujing/OnnxOCR
+  - Proper CLS (angle classification), DET (detection), and REC (recognition) model pipeline
+  - Exact preprocessing methods from OnnxOCR without OpenCV dependency
+  - DB postprocessing and CTC decoder for accurate text extraction
+  - Model selection display in UI showing which models are being used
+- **Enhanced Model Management**:
+  - Display selected models (DET, CLS, REC, DICT) in the UI
+  - Dynamic model loading based on configuration
+  - Improved progress reporting during initialization
+- **PWA Improvements**:
+  - Fixed icon generation and paths
+  - Updated manifest for GitHub Pages compatibility
+  - Improved service worker caching strategy
+
+### Fixed
+- **Critical Bug Fixes**:
+  - Fixed PaddleOCR initialization error "re.init is not a function"
+  - Fixed preset configuration names mismatch between UI and engine
+  - Fixed ONNX Runtime CDN loading issue by using local WASM files
+  - Fixed Tesseract worker initialization with proper v5 API
+  - Fixed PWA manifest paths for GitHub Pages deployment
+  - Fixed service worker cache paths and icon references
+- **Configuration Issues**:
+  - Added proper preset mapping for UI compatibility
+  - Fixed config application to support multiple engine interfaces
+  - Improved fallback handling for unknown presets
+
+### Changed
+- Replaced mock PaddleOCR implementation with full OnnxOCR engine
+- Updated optimal configuration mapping system
+- Enhanced error handling throughout the application
+- Improved model initialization feedback
+- Consolidated to single Mantine UI version with PWA support
+
+### Technical Details
+- Implemented store2 caching as requested
+- Added angle classification support for rotated text
+- Integrated exact OnnxOCR preprocessing pipeline
+- Used PP-OCRv5 models with proper dictionary loading
+
 ## [2.0.0] - 2024-07-26
 
 ### Added

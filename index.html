@@ -654,6 +654,17 @@
                     </svg>
                     Process Images
                 </button>
+                
+                <!-- Model Info Display -->
+                <div class="settings-group" id="modelInfoSection" style="display: none; margin-top: var(--mantine-spacing-lg); padding: var(--mantine-spacing-md); background-color: var(--mantine-color-dark-5); border-radius: var(--mantine-radius-md);">
+                    <div class="settings-label" style="color: var(--mantine-color-blue-light); margin-bottom: var(--mantine-spacing-sm);">Selected Models</div>
+                    <div style="font-size: 0.75rem; color: var(--mantine-color-dark-1); font-family: monospace;">
+                        <div>DET: <span id="selectedDET" style="color: var(--mantine-color-dark-0);">-</span></div>
+                        <div>CLS: <span id="selectedCLS" style="color: var(--mantine-color-dark-0);">-</span></div>
+                        <div>REC: <span id="selectedREC" style="color: var(--mantine-color-dark-0);">-</span></div>
+                        <div>DICT: <span id="selectedDICT" style="color: var(--mantine-color-dark-0);">-</span></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Progress Section -->
@@ -852,6 +863,11 @@
                             };
                             result = await window.OCREngine.processWithPaddleOCR(file, options, (msg) => {
                                 updateProgress((i / selectedFiles.length) * 100, msg);
+                                
+                                // Update model info display
+                                if (msg.phase === 'model_selection' && msg.models) {
+                                    updateModelInfo(msg.models);
+                                }
                             });
                         } else if (engineType === 'ppocr-v5') {
                             // Get preset options
@@ -871,6 +887,11 @@
                                 currentEngine = new PPOCRv5OnnxEngine(options);
                                 await currentEngine.initialize((msg) => {
                                     updateProgress((i / selectedFiles.length) * 100, msg);
+                                    
+                                    // Update model info display
+                                    if (msg.phase === 'model_selection' && msg.models) {
+                                        updateModelInfo(msg.models);
+                                    }
                                 });
                             }
                             
@@ -937,6 +958,16 @@
                 showNotification('Text copied to clipboard', 'success');
             });
         };
+        
+        function updateModelInfo(models) {
+            if (models) {
+                document.getElementById('modelInfoSection').style.display = 'block';
+                document.getElementById('selectedDET').textContent = models.det || '-';
+                document.getElementById('selectedCLS').textContent = models.cls || '-';
+                document.getElementById('selectedREC').textContent = models.rec || '-';
+                document.getElementById('selectedDICT').textContent = models.dict || '-';
+            }
+        }
         
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');

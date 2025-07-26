@@ -1,141 +1,76 @@
-import * as ort from 'onnxruntime-web';
-
-// Configure ONNX Runtime for WebAssembly execution
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/';
-
-// Model URLs - Using lightweight models suitable for browser
-const MODEL_BASE_URL = 'https://huggingface.co/spaces/tomofi/EasyOCR/resolve/main/';
-const DETECTION_MODEL_URL = MODEL_BASE_URL + 'text_detection.onnx';
-const RECOGNITION_MODEL_URL = MODEL_BASE_URL + 'text_recognition.onnx';
+import { OnnxOCREngine } from './onnx-ocr-engine.js';
 
 export class PaddleOCR {
     constructor() {
-        this.detectionSession = null;
-        this.recognitionSession = null;
+        this.engine = null;
         this.initialized = false;
-        this.canvas = null;
-        this.ctx = null;
+        this.CONFIG = {};
+        this.config = {};
     }
 
     async initialize(progressCallback) {
         if (this.initialized) return;
 
         try {
-            // Create canvas for image processing
-            this.canvas = document.createElement('canvas');
-            this.ctx = this.canvas.getContext('2d');
+            // Create OnnxOCR engine instance
+            this.engine = new OnnxOCREngine({
+                modelPath: '/public/models/PP-OCRv5',
+                useAngleCls: true,
+                useGPU: false
+            });
 
-            progressCallback?.({ status: 'loading', message: 'Loading text detection model...' });
+            // Initialize the engine
+            await this.engine.initialize(progressCallback);
             
-            // For now, we'll use a simplified approach
-            // In production, you would load actual PaddleOCR ONNX models
             this.initialized = true;
             
-            progressCallback?.({ status: 'ready', message: 'OCR models loaded successfully!' });
+            progressCallback?.({ status: 'ready', message: 'PaddleOCR initialized successfully!' });
         } catch (error) {
             console.error('Failed to initialize PaddleOCR:', error);
             throw error;
         }
     }
 
-    async detectText(imageData) {
-        // Preprocess image
-        const processed = await this.preprocessImage(imageData);
-        
-        // For demo purposes, return mock detection boxes
-        // In production, this would run the actual detection model
-        return [
-            {
-                box: [[10, 10], [200, 10], [200, 50], [10, 50]],
-                confidence: 0.95
-            }
-        ];
+    async init() {
+        // Alias for initialize
+        return this.initialize();
     }
 
-    async recognizeText(imageData, boxes) {
-        const results = [];
-        
-        for (const box of boxes) {
-            // Crop image to box region
-            const cropped = await this.cropToBox(imageData, box);
-            
-            // For demo, return sample text
-            // In production, this would run the recognition model
-            results.push({
-                text: 'Sample detected text',
-                confidence: box.confidence
-            });
-        }
-        
-        return results;
-    }
-
-    async process(imageBlob) {
-        if (!this.initialized) {
+    async detect(canvas) {
+        if (!this.initialized || !this.engine) {
             throw new Error('PaddleOCR not initialized');
         }
 
-        // Convert blob to image data
-        const imageData = await this.blobToImageData(imageBlob);
+        // Use the OnnxOCR engine to detect text
+        const result = await this.engine.detect(canvas);
         
-        // Detect text regions
-        const detections = await this.detectText(imageData);
-        
-        // Recognize text in each region
-        const recognitions = await this.recognizeText(imageData, detections);
-        
-        // Combine results
-        const results = detections.map((detection, index) => ({
-            box: detection.box,
-            text: recognitions[index].text,
-            confidence: recognitions[index].confidence
-        }));
-        
-        return results;
+        return result;
     }
 
-    async preprocessImage(imageData) {
-        // Resize and normalize image for model input
-        const targetSize = 960;
-        const scale = Math.min(targetSize / imageData.width, targetSize / imageData.height);
-        
-        const newWidth = Math.round(imageData.width * scale);
-        const newHeight = Math.round(imageData.height * scale);
-        
-        this.canvas.width = newWidth;
-        this.canvas.height = newHeight;
-        
-        // Draw and get processed image data
-        this.ctx.drawImage(imageData, 0, 0, newWidth, newHeight);
-        return this.ctx.getImageData(0, 0, newWidth, newHeight);
+    async process(file, progressCallback) {
+        if (!this.initialized || !this.engine) {
+            throw new Error('PaddleOCR not initialized');
+        }
+
+        // Use the OnnxOCR engine to process
+        return await this.engine.process(file, progressCallback);
     }
 
-    async cropToBox(imageData, box) {
-        const [x1, y1] = box.box[0];
-        const [x2, y2] = box.box[2];
+    // Apply configuration from optimal configs
+    applyConfig(config) {
+        if (!this.engine) return;
         
-        const width = x2 - x1;
-        const height = y2 - y1;
+        // Update engine configuration
+        Object.assign(this.engine.config, config);
         
-        this.canvas.width = width;
-        this.canvas.height = height;
-        
-        this.ctx.drawImage(imageData, x1, y1, width, height, 0, 0, width, height);
-        return this.ctx.getImageData(0, 0, width, height);
+        // Update local config references for compatibility
+        this.CONFIG = { ...this.CONFIG, ...config };
+        this.config = { ...this.config, ...config };
     }
 
-    async blobToImageData(blob) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                this.canvas.width = img.width;
-                this.canvas.height = img.height;
-                this.ctx.drawImage(img, 0, 0);
-                resolve(img);
-            };
-            img.onerror = reject;
-            img.src = URL.createObjectURL(blob);
-        });
+    // Get selected models info
+    getSelectedModels() {
+        return this.engine ? this.engine.getSelectedModels() : null;
     }
 }
 
