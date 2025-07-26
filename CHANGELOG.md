@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2025-07-26
+
+### Added
+- Multi-engine OCR support with 5 different engines
+- PPU Mobile models for fast processing (50-200ms)
+- OnnxOCR v5, v4, and v2 models for high accuracy
+- Unified OCR manager for seamless engine switching
+- Model downloader with progress tracking
+- Automatic fallback to Tesseract on errors
+- Engine selection dropdown with caching indicators
+- Performance statistics display
+- Model info dialog
+
+### Changed
+- Complete architecture overhaul for multi-engine support
+- Enhanced UI with engine selection and progress bars
+- Improved error handling with automatic fallback
+- Updated service worker for better CORS handling
+- Optimized build configuration for model distribution
+
+### Fixed
+- Service worker CORS issues with external resources
+- Chrome extension URL conflicts
+- Icon loading in production builds
+- Model path resolution issues
+
 ## [3.0.1] - 2025-01-26
 
 ### Changed

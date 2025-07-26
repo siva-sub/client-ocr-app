@@ -533,6 +533,127 @@ body {
     font-weight: 500;
 }
 
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background-color: var(--mantine-color-dark-5);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--mantine-color-blue-5);
+    transition: width 0.3s ease;
+}
+
+/* File List */
+.file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background-color: var(--mantine-color-dark-6);
+    border-radius: 8px;
+    border: 1px solid var(--mantine-color-dark-4);
+}
+
+.file-name {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--mantine-color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-size {
+    font-size: 0.75rem;
+    color: var(--mantine-color-dimmed);
+    margin: 0 1rem;
+}
+
+.file-remove {
+    background: none;
+    border: none;
+    color: var(--mantine-color-red-5);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.file-remove:hover {
+    background-color: rgba(255, 45, 85, 0.1);
+}
+
+/* Model Info Button */
+.info-btn {
+    background: none;
+    border: none;
+    color: var(--mantine-color-blue-5);
+    cursor: pointer;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    padding: 0.125rem 0.25rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.info-btn:hover {
+    background-color: var(--mantine-color-dark-5);
+}
+
+/* Alert */
+.mantine-Alert {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: var(--mantine-color-dark-6);
+    border: 1px solid var(--mantine-color-dark-4);
+    color: var(--mantine-color-text);
+    margin-bottom: 1rem;
+}
+
+/* Statistics Grid */
+.statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--mantine-color-dimmed);
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mantine-color-text);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .mantine-Title {
@@ -549,5 +670,17 @@ body {
     
     .mantine-Navbar {
         display: none;
+    }
+    
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .mantine-Grid {
+        flex-direction: column;
+    }
+    
+    .mantine-Col {
+        width: 100%;
     }
 }

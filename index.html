@@ -7,7 +7,7 @@
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a1b1e">
-    <meta name="description" content="Extract text from images with interactive bounding boxes. 100% client-side OCR powered by PaddleOCR 3.0 and ONNX Runtime.">
+    <meta name="description" content="Extract text from images with multiple OCR engines. Fast mobile models and accurate server models. 100% client-side processing.">
     <link rel="manifest" href="./manifest.json">
     
     <!-- Apple Touch Icon -->
@@ -28,11 +28,12 @@
                             <line x1="9" y1="9" x2="15" y2="9"/>
                             <line x1="9" y1="13" x2="15" y2="13"/>
                         </svg>
-                        <span>OnnxOCR</span>
+                        <span>Smart OCR</span>
                     </div>
                     <nav class="mantine-Navbar">
                         <a href="#" class="mantine-NavLink active">Demo</a>
-                        <a href="https://github.com/jingsongliujing/OnnxOCR" class="mantine-NavLink" target="_blank">Documentation</a>
+                        <a href="https://github.com/jingsongliujing/OnnxOCR" class="mantine-NavLink" target="_blank">OnnxOCR</a>
+                        <a href="https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr" class="mantine-NavLink" target="_blank">PPU-OCR</a>
                         <a href="https://github.com/siva-sub/client-ocr-app" class="mantine-NavLink" target="_blank">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -48,11 +49,17 @@
             <div class="mantine-Container">
                 <!-- Title Section -->
                 <div class="mantine-Title-section">
-                    <h1 class="mantine-Title">Browser-Based OCR with ONNX Models</h1>
+                    <h1 class="mantine-Title">Multi-Engine OCR with Visual Results</h1>
                     <p class="mantine-Text">
-                        Using PaddleOCR models converted to ONNX format for high-performance text recognition directly in your browser.
-                        No server required - all processing happens locally.
+                        Choose between fast mobile models (PPU) or accurate server models (OnnxOCR). All processing happens locally in your browser.
+                        Features Tesseract as a fallback option.
                     </p>
+                </div>
+
+                <!-- Status and Progress -->
+                <div id="status" class="mantine-Alert" style="display: none;"></div>
+                <div class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
                 </div>
 
                 <!-- Input Section -->
@@ -66,142 +73,124 @@
                                     <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                                 </svg>
                                 <div class="mantine-Text-lg">Drag images here or click to select</div>
-                                <div class="mantine-Text-sm mantine-dimmed">Attach as many files as you like, each file should not exceed 5mb</div>
+                                <div class="mantine-Text-sm mantine-dimmed">Supports JPG, PNG, and other image formats</div>
                             </div>
-                            <input type="file" id="fileInput" multiple accept="image/*,.pdf" style="display: none;">
+                            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
                         </div>
 
                         <!-- File List -->
-                        <div class="mantine-FileList" id="fileList" style="display: none;">
-                            <h3 class="mantine-Text-sm mantine-dimmed">Selected Files</h3>
-                            <div id="fileListContent"></div>
-                        </div>
+                        <div id="fileList" class="file-list"></div>
 
-                        <!-- Settings -->
+                        <!-- Engine Selection -->
                         <div class="mantine-Grid">
                             <div class="mantine-Col">
                                 <label class="mantine-InputWrapper">
-                                    <div class="mantine-InputLabel">OCR Engine</div>
+                                    <div class="mantine-InputLabel">
+                                        OCR Engine
+                                        <button id="modelInfoBtn" class="info-btn" title="View model information">ℹ</button>
+                                    </div>
                                     <select class="mantine-Select" id="engineSelect">
-                                        <option value="paddleocr" selected>PaddleOCR (ONNX)</option>
-                                        <option value="tesseract">Tesseract.js</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <div class="mantine-Col" id="modelSelectWrapper">
-                                <label class="mantine-InputWrapper">
-                                    <div class="mantine-InputLabel">Model Version</div>
-                                    <select class="mantine-Select" id="modelSelect">
-                                        <option value="PP-OCRv5" selected>PP-OCRv5 (Latest)</option>
-                                        <option value="PP-OCRv4">PP-OCRv4</option>
+                                        <option value="ppu-mobile">PPU Mobile (Fast)</option>
+                                        <option value="onnx-v5-accurate">OnnxOCR v5 (Accurate)</option>
+                                        <option value="onnx-v4-balanced">OnnxOCR v4 (Balanced)</option>
+                                        <option value="onnx-v2-server">OnnxOCR v2 (Server)</option>
+                                        <option value="tesseract">Tesseract (Fallback)</option>
                                     </select>
                                 </label>
                             </div>
                         </div>
 
                         <!-- Process Button -->
-                        <button class="mantine-Button mantine-Button-filled" id="processBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 12h4l3 9 4-18 3 9h4"/>
+                        <button class="mantine-Button mantine-Button-filled" id="processBtn" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
                             </svg>
-                            Run OCR Recognition
+                            Process with OCR
                         </button>
                     </div>
                 </div>
 
-                <!-- Progress Section -->
-                <div class="mantine-Paper" id="progressSection" style="display: none;">
-                    <div class="mantine-Stack">
-                        <div class="mantine-Text-sm" id="progressText">Initializing models...</div>
-                        <div class="mantine-Progress">
-                            <div class="mantine-Progress-bar" id="progressBar"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Results Section -->
-                <div id="resultsSection" style="display: none;">
-                    <!-- Visual Results (PaddleOCR style) -->
-                    <div class="mantine-Paper" id="visualResults" style="display: none;">
-                        <div class="mantine-Stack">
-                            <h2 class="mantine-Title-sm">Detection Results</h2>
-                            
-                            <div class="mantine-Tabs">
-                                <div class="mantine-Tabs-list">
-                                    <button class="mantine-Tab active" data-tab="visual">Visual</button>
-                                    <button class="mantine-Tab" data-tab="text">Text Only</button>
-                                    <button class="mantine-Tab" data-tab="json">JSON</button>
-                                </div>
-                                
-                                <div class="mantine-Tabs-panel active" data-panel="visual">
-                                    <div class="ocr-visual-container">
-                                        <div class="ocr-canvas-wrapper">
-                                            <canvas id="ocrCanvas"></canvas>
-                                            <div class="ocr-boxes" id="ocrBoxes"></div>
-                                        </div>
-                                        <div class="ocr-detections">
-                                            <h3 class="mantine-Text-sm mantine-dimmed">Detected Text Regions</h3>
-                                            <div class="ocr-detection-list" id="detectionList"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mantine-Tabs-panel" data-panel="text">
-                                    <pre class="mantine-Code" id="textResult"></pre>
-                                </div>
-                                
-                                <div class="mantine-Tabs-panel" data-panel="json">
-                                    <pre class="mantine-Code" id="jsonResult"></pre>
-                                </div>
+                <div class="mantine-Paper" id="results" style="display: none;">
+                    <div class="mantine-Stack">
+                        <div class="mantine-Group-apart">
+                            <h2 class="mantine-Title-sm">Results</h2>
+                            <div class="mantine-Group">
+                                <label class="mantine-Radio">
+                                    <input type="radio" name="resultView" value="visual" checked>
+                                    <span>Visual</span>
+                                </label>
+                                <label class="mantine-Radio">
+                                    <input type="radio" name="resultView" value="text">
+                                    <span>Text</span>
+                                </label>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Standard Results (Tesseract style) -->
-                    <div class="mantine-Paper" id="standardResults" style="display: none;">
-                        <div class="mantine-Stack">
-                            <h2 class="mantine-Title-sm">OCR Results</h2>
-                            <pre class="mantine-Code" id="standardTextResult"></pre>
+                        <!-- Canvas Container -->
+                        <div class="canvas-container" style="display: none;">
+                            <div id="visualResults" class="canvas-wrapper">
+                                <canvas id="imageCanvas" style="display: none;"></canvas>
+                                <canvas id="resultCanvas"></canvas>
+                            </div>
+                            <div id="textResultsContainer" style="display: none;">
+                                <textarea id="textResults" class="mantine-Textarea" rows="10" readonly></textarea>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Model Info -->
-                <div class="mantine-Paper mantine-dimmed" style="margin-top: 2rem;">
-                    <div class="mantine-Stack spacing-xs">
-                        <h3 class="mantine-Text-sm">Model Information</h3>
-                        <div class="mantine-Code" style="font-size: 0.75rem;">
-                            <div>Detection Model: <span id="detModel">-</span></div>
-                            <div>Classification Model: <span id="clsModel">-</span></div>
-                            <div>Recognition Model: <span id="recModel">-</span></div>
-                            <div>Dictionary: <span id="dictModel">-</span></div>
+                        <!-- Statistics -->
+                        <div id="statistics" class="statistics-grid"></div>
+
+                        <!-- Action Buttons -->
+                        <div class="mantine-Group">
+                            <button class="mantine-Button" id="copyBtn" disabled>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copy Text
+                            </button>
+                            <button class="mantine-Button" id="downloadBtn" disabled>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Download Results
+                            </button>
+                            <button class="mantine-Button" id="clearBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                                Clear
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-
-        <!-- Footer -->
-        <footer class="mantine-Footer">
-            <div class="mantine-Container">
-                <div class="mantine-Group">
-                    <div class="mantine-Text-sm mantine-dimmed">
-                        Based on <a href="https://github.com/jingsongliujing/OnnxOCR" target="_blank">OnnxOCR</a> • 
-                        Models from <a href="https://github.com/PaddlePaddle/PaddleOCR" target="_blank">PaddleOCR</a>
-                    </div>
-                    <div class="mantine-Text-sm mantine-dimmed">
-                        <a href="https://www.npmjs.com/package/client-ocr-app" target="_blank">npm package</a>
-                    </div>
-                </div>
-            </div>
-        </footer>
     </div>
 
     <!-- Load dependencies -->
-    <script src="https://docs.opencv.org/4.5.0/opencv.js" async></script>
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js"></script>
+    <!-- OpenCV.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.11.0-release.1/dist/opencv.min.js"></script>
     
-    <!-- Main application -->
+    <!-- ONNX Runtime -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js" crossorigin="anonymous"></script>
+    
+    <!-- OCR Engines and Main App -->
     <script type="module" src="./src/main.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed'));
+            });
+        }
+    </script>
 </body>
 </html>

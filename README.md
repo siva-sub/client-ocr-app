@@ -1,4 +1,4 @@
-# 🔍 Smart OCR - Visual Text Recognition in Your Browser
+# 🔍 Smart OCR - Multi-Engine Visual Text Recognition
 
 <div align="center">
 
@@ -7,52 +7,54 @@
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge&logo=pwa)](https://siva-sub.github.io/client-ocr-app)
 
-**State-of-the-art browser-based OCR with visual results display**
+**Advanced browser-based OCR with multiple engines and visual results**
 
-Extract text from images and PDFs with interactive bounding boxes, powered by PaddleOCR 3.0 and ONNX Runtime. 100% client-side - your data never leaves your device.
+Choose between fast mobile models or accurate server models. Features PPU-Paddle OCR, OnnxOCR, and Tesseract fallback. 100% client-side processing.
 
 [**🚀 Try Live Demo**](https://siva-sub.github.io/client-ocr-app) | [**📦 NPM Package**](https://www.npmjs.com/package/@siva-sub/client-ocr-app) | [**📖 Documentation**](#documentation)
 
-<img src="https://github.com/siva-sub/client-ocr-app/assets/demo-screenshot.png" alt="Smart OCR Demo" width="600">
-
 </div>
 
-## ✨ What's New in v3.0
+## ✨ What's New in v4.0
 
-### 🎯 Visual OCR Interface
-- **Interactive Bounding Boxes**: See exactly where text was detected
-- **Click-to-Select**: Click any detection to highlight and view details
-- **Three View Modes**: Visual, Text-only, and JSON views
-- **Responsive Design**: Works perfectly on desktop and mobile
+### 🚀 Complete Multi-Engine Implementation
+- **PPU-Paddle-OCR Complete**: Full implementation with deskew, detection, angle classification
+- **OnnxOCR TextSystem**: Complete pipeline with TextDetector, TextRecognizer, TextClassifier
+- **Enhanced Processing**: All preprocessing and postprocessing methods from both repositories
+- **Visual Results**: Advanced visualization with polygon boxes and confidence scores
 
-### 🏗️ OnnxOCR Architecture
-- Modular pipeline following [OnnxOCR](https://github.com/jingsongliujing/OnnxOCR) implementation
-- Separated preprocessing, detection, classification, and recognition modules
-- Enhanced accuracy with proper DB postprocessing and CTC decoding
+### 🎯 Advanced Features
+- **Auto-Deskew**: Automatic image rotation correction
+- **Angle Classification**: 180° rotation detection and correction
+- **Smart Padding**: Adaptive padding for better recognition
+- **Batch Processing**: Efficient batch recognition for multiple regions
+- **WebGL Acceleration**: Optimized for mobile and desktop performance
 
-## 🚀 Features
+## 🌟 Features
 
-- **🔒 100% Private**: All processing in your browser, no server uploads
-- **🎨 Visual Results**: Interactive bounding boxes show detected text regions
-- **⚡ Fast & Accurate**: PP-OCRv5 models with WebGL acceleration
-- **📱 PWA Support**: Install and use offline
-- **🌍 Multi-language**: English, Chinese, Japanese, Korean support
-- **📄 PDF Support**: Extract text from multi-page PDFs
-- **💾 Smart Caching**: Instant re-processing of previously analyzed files
+- **🔐 100% Private**: All processing in browser, no data uploads
+- **⚡ Multiple Engines**: 
+  - PPU-Paddle-OCR: Fast mobile models with complete processing pipeline
+  - OnnxOCR: Accurate server models with TextSystem architecture
+  - Tesseract: Reliable fallback with word-level detection
+- **🎨 Advanced Visualization**: 
+  - Polygon and rectangle bounding boxes
+  - Color-coded confidence scores
+  - Reading order visualization
+- **📱 PWA Support**: Install as app, works offline with cached models
+- **🌍 Multi-language**: English, Chinese, Japanese, Korean with proper character dictionaries
+- **💾 Smart Model Management**: 
+  - Automatic model downloading with progress tracking
+  - IndexedDB caching for instant switching
+  - Model size optimization
+- **📊 Comprehensive Metrics**: 
+  - Per-stage processing time
+  - Confidence scores for each detected text
+  - Model performance comparison
 
-## 📸 Screenshots
+## 🚀 Quick Start
 
-<table>
-<tr>
-<td><img src="screenshots/visual-mode.png" alt="Visual Mode" width="300"><br><b>Visual Detection Mode</b></td>
-<td><img src="screenshots/text-results.png" alt="Text Results" width="300"><br><b>Clean Text Output</b></td>
-<td><img src="screenshots/mobile-view.png" alt="Mobile View" width="300"><br><b>Mobile Responsive</b></td>
-</tr>
-</table>
-
-## 🎯 Quick Start
-
-### Online Demo (Recommended)
+### Online Demo
 Visit [https://siva-sub.github.io/client-ocr-app](https://siva-sub.github.io/client-ocr-app)
 
 ### NPM Installation
@@ -70,76 +72,88 @@ npm run dev
 
 ## 📖 Documentation
 
-### Using the Visual Interface
+### Available OCR Engines
 
-1. **Upload Image**: Drag & drop or click to select images/PDFs
-2. **Select Engine**: Choose PaddleOCR for visual results or Tesseract for text-only
-3. **Process**: Click "Process Images" to start OCR
+#### PPU Mobile (Fast) ⚡
+- Optimized for mobile and real-time processing
+- PP-OCRv5 detection + PP-OCRv4 recognition
+- ~50-200ms processing time
+- Best for: Live camera OCR, mobile apps
+
+#### OnnxOCR v5 (Most Accurate) 🎯
+- Latest PP-OCRv5 models with angle classification
+- Highest accuracy on complex documents
+- ~500-1000ms processing time
+- Best for: Documents, receipts, forms
+
+#### OnnxOCR v4 (Balanced) ⚖️
+- Good balance of speed and accuracy
+- PP-OCRv4 full pipeline
+- ~300-500ms processing time
+- Best for: General purpose OCR
+
+#### OnnxOCR v2 (Server) 🖥️
+- Heavy server models for maximum accuracy
+- Designed for backend processing
+- ~1000-2000ms processing time
+- Best for: Batch processing, archives
+
+#### Tesseract (Fallback) 🛡️
+- Classic OCR engine
+- Works offline without model downloads
+- ~500-1500ms processing time
+- Best for: Fallback, offline usage
+
+### Usage Guide
+
+1. **Select Engine**: Choose based on your speed/accuracy needs
+2. **Upload Image**: Drag & drop or click to select
+3. **Process**: Models download automatically on first use
 4. **View Results**:
-   - **Visual Tab**: See bounding boxes overlaid on your image
-   - **Text Tab**: Get clean, copyable text
-   - **JSON Tab**: Access raw OCR data with coordinates
+   - Visual mode: See bounding boxes with confidence
+   - Text mode: Get clean, copyable text
+   - Download results as JSON
 
-### Supported Formats
-- **Images**: JPEG, PNG, WebP
-- **Documents**: PDF (multi-page support)
-- **Batch Processing**: Process multiple files at once
+### Model Management
 
-### OCR Engines
-
-#### PaddleOCR (Recommended)
-- Visual bounding box display
-- PP-OCRv5 models for best accuracy
-- Angle classification for rotated text
-- Mobile models for faster processing
-
-#### Tesseract.js
-- Traditional OCR engine
-- Good baseline accuracy
-- Text-only output
+- Models are cached after first download
+- ✓ indicates cached models (instant loading)
+- ⬇ indicates models need downloading
+- Switch engines anytime without re-uploading
 
 ## 🛠️ Technology Stack
 
-- **PaddleOCR 3.0**: State-of-the-art OCR models
+- **[PPU-Paddle-OCR](https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr)**: Mobile-optimized models
+- **[OnnxOCR](https://github.com/jingsongliujing/OnnxOCR)**: High-accuracy ONNX models
 - **ONNX Runtime Web**: Hardware-accelerated inference
-- **Mantine UI**: Modern, responsive design
-- **Vite**: Lightning-fast build tool
-- **PDF.js**: PDF rendering and processing
+- **Tesseract.js**: Classic OCR fallback
+- **OpenCV.js**: Image preprocessing
+- **Vite + Mantine**: Modern UI framework
 
-## 📊 Performance
+## 📊 Performance Comparison
 
-- **Model Size**: ~12MB (cached after first load)
-- **Processing Time**: 1-3 seconds per image
-- **Accuracy**: 95%+ on clean documents
-- **Browser Support**: Chrome 90+, Firefox 89+, Safari 15.4+
+| Engine | Speed | Accuracy | Model Size | Use Case |
+|--------|-------|----------|------------|----------|
+| PPU Mobile | ⚡⚡⚡⚡⚡ | ⭐⭐⭐ | 12MB | Real-time OCR |
+| OnnxOCR v5 | ⚡⚡ | ⭐⭐⭐⭐⭐ | 25MB | Documents |
+| OnnxOCR v4 | ⚡⚡⚡ | ⭐⭐⭐⭐ | 20MB | General |
+| OnnxOCR v2 | ⚡ | ⭐⭐⭐⭐⭐ | 40MB | Batch |
+| Tesseract | ⚡⚡ | ⭐⭐⭐ | 11MB | Fallback |
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT License - see [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) - State-of-the-art OCR models
-- [OnnxOCR](https://github.com/jingsongliujing/OnnxOCR) - ONNX implementation reference
-- [Tesseract.js](https://tesseract.projectnaptha.com/) - JavaScript OCR engine
-- [ONNX Runtime Web](https://onnxruntime.ai/) - Browser-based model inference
-
-## 📧 Contact
-
-**Sivasubramanian Ramanathan**
-- Email: [hello@sivasub.com](mailto:hello@sivasub.com)
-- GitHub: [@siva-sub](https://github.com/siva-sub)
-- Website: [sivasub.com](https://sivasub.com)
+- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) - State-of-the-art models
+- [PPU-Paddle-OCR](https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr) - Mobile optimization
+- [OnnxOCR](https://github.com/jingsongliujing/OnnxOCR) - ONNX implementation
+- [Tesseract.js](https://tesseract.projectnaptha.com/) - Classic OCR engine
 
 ---
 

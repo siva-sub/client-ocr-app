@@ -1,8 +1,8 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "type": "module",
-  "description": "State-of-the-art browser-based OCR powered by PaddleOCR 3.0 and PP-OCRv5 with ONNX Runtime - Features visual bounding box results display, Mantine-inspired UI, interactive detection selection, 100% client-side text extraction from images and PDFs with intelligent caching, mobile models, PWA support, and preset configurations for various document types",
+  "description": "Multi-engine browser OCR with visual results. Choose between fast mobile models (PPU) or accurate server models (OnnxOCR). Features Tesseract fallback, visual bounding boxes, 100% client-side processing, PWA support, and intelligent model caching.",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
   "repository": {
     "type": "git",
@@ -64,7 +64,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .js",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@mantine/core": "^8.2.1",
@@ -79,7 +84,12 @@
     "tesseract.js": "^5.0.4"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "eslint": "^8.57.0",
     "gh-pages": "^6.1.1",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.3.3",
     "vite": "^5.0.0"
   }
 }
