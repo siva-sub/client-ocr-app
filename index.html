@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PP-OCR Web - Client-Side OCR with ONNX Runtime</title>
-  <script type="module" crossorigin src="/client-ocr-app/assets/index-BWP8YSv7.js"></script>
+  <script type="module" crossorigin src="/client-ocr-app/assets/index-BJww9yLY.js"></script>
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/onnxruntime-CqRzMC93.js">
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/pdfjs-BhC3vFUT.js">
   <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-BTpUwQvT.css">
@@ -65,6 +65,27 @@
                             <label for="infographicMode">
                                 <span class="option-name">Infographic Mode</span>
                                 <span class="option-desc">Optimized for complex layouts, diagrams, and multi-region documents</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="documentMode" name="documentMode">
+                            <label for="documentMode">
+                                <span class="option-name">Document Mode</span>
+                                <span class="option-desc">Optimized for official documents, ID cards, and banking forms</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="receiptMode" name="receiptMode">
+                            <label for="receiptMode">
+                                <span class="option-name">Receipt Mode</span>
+                                <span class="option-desc">Optimized for receipts with thermal printing and price extraction</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="pdfMode" name="pdfMode">
+                            <label for="pdfMode">
+                                <span class="option-name">PDF Mode</span>
+                                <span class="option-desc">Optimized for PDF documents with structure extraction and search</span>
                             </label>
                         </div>
                     </div>
