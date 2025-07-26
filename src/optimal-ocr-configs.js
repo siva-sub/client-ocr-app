@@ -139,7 +139,7 @@ export const OPTIMAL_CONFIGS = {
     },
 
     // ID Cards - high precision for small text
-    IDCARD_OPTIMIZED: {
+    ID_CARD_OPTIMIZED: {
         detection: {
             det_limit_side_len: 2560,
             det_db_thresh: 0.06,          // Very low threshold
@@ -199,7 +199,7 @@ export const PERFORMANCE_BENCHMARKS = {
         characterDetectionImprovement: '25-40%',
         notes: 'Better structure preservation and multi-column handling'
     },
-    IDCARD_OPTIMIZED: {
+    ID_CARD_OPTIMIZED: {
         speedImprovement: '-15% to -5%',
         accuracyImprovement: '35-50%',
         characterDetectionImprovement: '40-60%',
@@ -254,17 +254,30 @@ export function applyOptimalConfig(engineInstance, configType) {
     
     // Apply detection parameters
     Object.entries(config.detection).forEach(([key, value]) => {
-        if (engineInstance.CONFIG.hasOwnProperty(key)) {
+        if (engineInstance.CONFIG && engineInstance.CONFIG.hasOwnProperty(key)) {
             engineInstance.CONFIG[key] = value;
+        } else if (engineInstance.config && engineInstance.config.hasOwnProperty(key)) {
+            engineInstance.config[key] = value;
         }
     });
     
     // Apply recognition parameters
     Object.entries(config.recognition).forEach(([key, value]) => {
-        if (engineInstance.CONFIG.hasOwnProperty(key)) {
+        if (engineInstance.CONFIG && engineInstance.CONFIG.hasOwnProperty(key)) {
             engineInstance.CONFIG[key] = value;
+        } else if (engineInstance.config && engineInstance.config.hasOwnProperty(key)) {
+            engineInstance.config[key] = value;
         }
     });
+    
+    // Apply preprocessing parameters if the engine supports them
+    if (config.preprocessing && engineInstance.preprocessingOptions) {
+        Object.entries(config.preprocessing).forEach(([key, value]) => {
+            if (engineInstance.preprocessingOptions.hasOwnProperty(key)) {
+                engineInstance.preprocessingOptions[key] = value;
+            }
+        });
+    }
     
     console.log(`Applied optimal ${configType} configuration`);
 }

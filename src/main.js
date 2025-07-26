@@ -4,6 +4,7 @@ import { tesseractOCREngine } from './tesseract-ocr-engine.js';
 import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './infographic-ocr-config.js';
 import { DOCUMENT_OCR_CONFIG, updatePaddleOCRForDocuments, extractReceiptFields } from './document-ocr-config.js';
 import { PDF_OCR_CONFIG, updatePaddleOCRForPDF, extractPDFStructure, createPDFSearchHighlighter } from './pdf-ocr-config.js';
+import { OPTIMAL_CONFIGS, applyOptimalConfig } from './optimal-ocr-configs.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import './style.css';
 
@@ -151,6 +152,12 @@ function setupEventListeners() {
     document.getElementById('recognitionModel').addEventListener('change', handleModelChange);
     document.getElementById('dictionary').addEventListener('change', handleModelChange);
     
+    // Configuration preset selection
+    const configPreset = document.getElementById('configPreset');
+    if (configPreset) {
+        configPreset.addEventListener('change', handleConfigPresetChange);
+    }
+    
     // Infographic mode toggle
     document.getElementById('infographicMode').addEventListener('change', handleInfographicModeChange);
     
@@ -159,6 +166,12 @@ function setupEventListeners() {
     
     // Receipt mode toggle
     document.getElementById('receiptMode').addEventListener('change', handleReceiptModeChange);
+    
+    // PDF mode toggle
+    const pdfModeCheckbox = document.getElementById('pdfMode');
+    if (pdfModeCheckbox) {
+        pdfModeCheckbox.addEventListener('change', handlePDFModeChange);
+    }
 }
 
 // Handle engine change
@@ -229,6 +242,47 @@ async function handlePreprocessingChange(event) {
         
         showStatus(`Switched to ${currentPreprocessing === 'improved' ? 'Improved (PPU)' : 'Standard'} preprocessing`, 'info');
     }
+}
+
+// Handle configuration preset change
+function handleConfigPresetChange(event) {
+    const configType = event.target.value;
+    console.log('Configuration preset changed to:', configType);
+    
+    // Clear all mode checkboxes
+    document.getElementById('infographicMode').checked = false;
+    document.getElementById('documentMode').checked = false;
+    document.getElementById('receiptMode').checked = false;
+    document.getElementById('pdfMode').checked = false;
+    
+    // Reset mode flags
+    infographicMode = false;
+    documentMode = false;
+    receiptMode = false;
+    pdfMode = false;
+    
+    // Set appropriate mode based on configuration
+    switch(configType) {
+        case 'INFOGRAPHIC_OPTIMIZED':
+            infographicMode = true;
+            document.getElementById('infographicMode').checked = true;
+            break;
+        case 'DOCUMENT_OPTIMIZED':
+        case 'ID_CARD_OPTIMIZED':
+            documentMode = true;
+            document.getElementById('documentMode').checked = true;
+            break;
+        case 'RECEIPT_OPTIMIZED':
+            receiptMode = true;
+            document.getElementById('receiptMode').checked = true;
+            break;
+        case 'PDF_OPTIMIZED':
+            pdfMode = true;
+            document.getElementById('pdfMode').checked = true;
+            break;
+    }
+    
+    showStatus(`Configuration preset changed to: ${configType.replace(/_/g, ' ').toLowerCase()}`, 'info');
 }
 
 // Handle model change for PaddleOCR
@@ -441,6 +495,15 @@ async function processImage() {
             // Force correct engine
             currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
             console.log('Forced engine to:', currentOCREngine);
+        }
+        
+        // Apply optimal configuration if PaddleOCR is selected
+        if (currentEngine === 'paddle') {
+            const configPreset = document.getElementById('configPreset');
+            if (configPreset && configPreset.value) {
+                console.log('Applying optimal configuration:', configPreset.value);
+                applyOptimalConfig(currentOCREngine, configPreset.value);
+            }
         }
         
         // Process with current OCR engine
