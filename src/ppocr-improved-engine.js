@@ -452,8 +452,8 @@ export class PPOCRImprovedEngine {
             
             // Normalize and rearrange to CHW format (RapidOCR style)
             // Ensure we're using the correct normalization values
-            const mean = CONFIG.det_mean || [0.485, 0.456, 0.406];
-            const std = CONFIG.det_std || [0.229, 0.224, 0.225];
+            const mean = this.CONFIG.det_mean || [0.485, 0.456, 0.406];
+            const std = this.CONFIG.det_std || [0.229, 0.224, 0.225];
             
             for (let i = 0; i < size; i++) {
                 const pixelIndex = i * 4;
@@ -519,11 +519,11 @@ export class PPOCRImprovedEngine {
             const bitmap = new Uint8Array(height * width);
             let detectedPixels = 0;
             for (let i = 0; i < height * width; i++) {
-                bitmap[i] = probMap[i] > CONFIG.det_db_thresh ? 255 : 0;
+                bitmap[i] = probMap[i] > this.CONFIG.det_db_thresh ? 255 : 0;
                 if (bitmap[i] === 255) detectedPixels++;
             }
             console.log(`Detected pixels: ${detectedPixels} out of ${height * width} (${(detectedPixels / (height * width) * 100).toFixed(2)}%)`);
-            console.log(`Detection threshold: ${CONFIG.det_db_thresh}`);
+            console.log(`Detection threshold: ${this.CONFIG.det_db_thresh}`);
             
             // Log some sample probability values
             const sampleProbs = [];
@@ -540,14 +540,14 @@ export class PPOCRImprovedEngine {
         let rejectedByScore = 0;
         let rejectedByArea = 0;
         
-        for (let y = 0; y < height && numContours < CONFIG.det_db_max_candidates; y++) {
-            for (let x = 0; x < width && numContours < CONFIG.det_db_max_candidates; x++) {
+        for (let y = 0; y < height && numContours < this.CONFIG.det_db_max_candidates; y++) {
+            for (let x = 0; x < width && numContours < this.CONFIG.det_db_max_candidates; x++) {
                 const idx = y * width + x;
                 if (bitmap[idx] === 255 && !visited.has(idx)) {
                     const box = this.findConnectedComponent(bitmap, width, height, x, y, visited, probMap);
                     if (box) {
                         componentsFound++;
-                        if (box.score >= CONFIG.det_db_box_thresh) {
+                        if (box.score >= this.CONFIG.det_db_box_thresh) {
                             // Scale back to original size
                             box.points = box.points.map(p => [
                                 Math.round(p[0] / ratio),
@@ -556,16 +556,16 @@ export class PPOCRImprovedEngine {
                             
                             // Calculate area
                             const area = this.calculatePolygonArea(box.points);
-                            if (area > CONFIG.min_area_thresh) {
+                            if (area > this.CONFIG.min_area_thresh) {
                                 boxes.push(box);
                                 numContours++;
                             } else {
                                 rejectedByArea++;
-                                console.log(`Component rejected by area: ${area} < ${CONFIG.min_area_thresh}`);
+                                console.log(`Component rejected by area: ${area} < ${this.CONFIG.min_area_thresh}`);
                             }
                         } else {
                             rejectedByScore++;
-                            console.log(`Component rejected by score: ${box.score.toFixed(3)} < ${CONFIG.det_db_box_thresh}`);
+                            console.log(`Component rejected by score: ${box.score.toFixed(3)} < ${this.CONFIG.det_db_box_thresh}`);
                         }
                     }
                 }
@@ -639,7 +639,7 @@ export class PPOCRImprovedEngine {
             }
         }
         
-        if (points.length < CONFIG.det_db_min_size) {
+        if (points.length < this.CONFIG.det_db_min_size) {
             return null;
         }
         
@@ -652,7 +652,7 @@ export class PPOCRImprovedEngine {
         let maxY = Math.max(...ys);
         
         // Apply unclip ratio - different padding for x and y to better fit text
-        const unclipRatio = CONFIG.det_db_unclip_ratio;
+        const unclipRatio = this.CONFIG.det_db_unclip_ratio;
         const xPadding = (maxX - minX) * 0.1; // 10% horizontal padding
         const yPadding = (maxY - minY) * 0.2; // 20% vertical padding for better line coverage
         
@@ -790,7 +790,7 @@ export class PPOCRImprovedEngine {
         const results = [];
         
         // Process in batches like RapidOCR
-        const batchSize = CONFIG.rec_batch_num;
+        const batchSize = this.CONFIG.rec_batch_num;
         
         for (let i = 0; i < boxes.length; i += batchSize) {
             const batchBoxes = boxes.slice(i, Math.min(i + batchSize, boxes.length));
@@ -834,7 +834,7 @@ export class PPOCRImprovedEngine {
             // Decode the output
             const result = await this.decodeRecognition(output[this.recognitionSession.outputNames[0]]);
             
-            if (result.score >= CONFIG.drop_score) {
+            if (result.score >= this.CONFIG.drop_score) {
                 results.push({
                     text: result.text,
                     confidence: result.score,
@@ -913,8 +913,8 @@ export class PPOCRImprovedEngine {
     async preprocessForRecognition(imageData) {
         // Recognition model expects fixed height
         const imgChannel = 3;
-        const imgHeight = CONFIG.rec_image_height;
-        const imgWidth = CONFIG.rec_image_width;
+        const imgHeight = this.CONFIG.rec_image_height;
+        const imgWidth = this.CONFIG.rec_image_width;
         
         // Calculate max width ratio (RapidOCR style)
         const h = imageData.height;
@@ -949,7 +949,7 @@ export class PPOCRImprovedEngine {
                     const srcIdx = (y * resizedW + x) * 4 + c;
                     const dstIdx = c * imgHeight * imgWidth + y * imgWidth + x;
                     // RapidOCR recognition normalization: (x/255 - 0.5) / 0.5
-                    paddingData[dstIdx] = (pixels[srcIdx] / 255.0 - CONFIG.rec_mean) / CONFIG.rec_std;
+                    paddingData[dstIdx] = (pixels[srcIdx] / 255.0 - this.CONFIG.rec_mean) / this.CONFIG.rec_std;
                 }
             }
         }
@@ -1014,7 +1014,7 @@ export class PPOCRImprovedEngine {
         if (filteredResults.length === 0) return filteredResults;
         
         // Apply English-specific post-processing if enabled
-        if (CONFIG.english_mode) {
+        if (this.CONFIG.english_mode) {
             filteredResults = this.postProcessEnglishText(filteredResults);
         }
         
@@ -1037,7 +1037,7 @@ export class PPOCRImprovedEngine {
             const currY = Math.min(...current.box.map(p => p[1]));
             
             const verticalGap = Math.abs(currY - prevY);
-            const threshold = avgHeight * CONFIG.vertical_gap_threshold;
+            const threshold = avgHeight * this.CONFIG.vertical_gap_threshold;
             
             if (verticalGap <= threshold) {
                 currentLine.push(current);
@@ -1087,7 +1087,7 @@ export class PPOCRImprovedEngine {
 
     filterResults(results) {
         // Filter out low confidence results - much lower threshold
-        const textScoreThreshold = CONFIG.drop_score; // Use the configured drop score
+        const textScoreThreshold = this.CONFIG.drop_score; // Use the configured drop score
         return results.filter(result => {
             // Keep results with any reasonable confidence
             if (result.confidence < textScoreThreshold) {

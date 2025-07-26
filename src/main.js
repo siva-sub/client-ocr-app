@@ -2,6 +2,7 @@ import { ppOCRImprovedEngine } from './ppocr-improved-engine.js';
 import { ppOCREngine } from './ppocr-onnx-engine.js';
 import { tesseractOCREngine } from './tesseract-ocr-engine.js';
 import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './infographic-ocr-config.js';
+import { DOCUMENT_OCR_CONFIG, updatePaddleOCRForDocuments, extractReceiptFields } from './document-ocr-config.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import './style.css';
 
@@ -14,6 +15,8 @@ let currentEngine = 'tesseract';  // Default to tesseract for better accuracy
 let currentPreprocessing = 'improved'; // 'standard' or 'improved'
 let currentOCREngine = tesseractOCREngine;
 let infographicMode = false; // Flag for infographic optimization
+let documentMode = false; // Flag for document optimization
+let receiptMode = false; // Flag for receipt optimization
 
 // Add getter to prevent external modification
 Object.defineProperty(window, 'currentEngine', {
@@ -148,6 +151,12 @@ function setupEventListeners() {
     
     // Infographic mode toggle
     document.getElementById('infographicMode').addEventListener('change', handleInfographicModeChange);
+    
+    // Document mode toggle
+    document.getElementById('documentMode').addEventListener('change', handleDocumentModeChange);
+    
+    // Receipt mode toggle
+    document.getElementById('receiptMode').addEventListener('change', handleReceiptModeChange);
 }
 
 // Handle engine change
@@ -911,6 +920,12 @@ function handleInfographicModeChange(event) {
     infographicMode = event.target.checked;
     console.log('Infographic mode:', infographicMode ? 'enabled' : 'disabled');
     
+    // Disable document mode if infographic mode is enabled
+    if (infographicMode && documentMode) {
+        documentMode = false;
+        document.getElementById('documentMode').checked = false;
+    }
+    
     if (infographicMode && currentEngine === 'paddle') {
         // Apply optimized configuration for infographics
         updatePaddleOCRConfig(currentOCREngine);
@@ -918,6 +933,54 @@ function handleInfographicModeChange(event) {
     } else if (!infographicMode && currentEngine === 'paddle') {
         // Reset to default configuration
         showStatus('Infographic mode disabled', 'info');
+    }
+}
+
+// Handle document mode change
+function handleDocumentModeChange(event) {
+    documentMode = event.target.checked;
+    console.log('Document mode:', documentMode ? 'enabled' : 'disabled');
+    
+    // Disable infographic mode if document mode is enabled
+    if (documentMode && infographicMode) {
+        infographicMode = false;
+        document.getElementById('infographicMode').checked = false;
+    }
+    
+    if (documentMode && currentEngine === 'paddle') {
+        // Apply optimized configuration for documents
+        updatePaddleOCRForDocuments(currentOCREngine, 'general');
+        showStatus('Document mode enabled - optimized for official documents and ID cards', 'info');
+    } else if (!documentMode && currentEngine === 'paddle') {
+        // Reset to default configuration
+        showStatus('Document mode disabled', 'info');
+    }
+}
+
+// Handle receipt mode change
+function handleReceiptModeChange(event) {
+    receiptMode = event.target.checked;
+    console.log('Receipt mode:', receiptMode ? 'enabled' : 'disabled');
+    
+    // Disable other modes if receipt mode is enabled
+    if (receiptMode) {
+        if (infographicMode) {
+            infographicMode = false;
+            document.getElementById('infographicMode').checked = false;
+        }
+        if (documentMode) {
+            documentMode = false;
+            document.getElementById('documentMode').checked = false;
+        }
+    }
+    
+    if (receiptMode && currentEngine === 'paddle') {
+        // Apply optimized configuration for receipts
+        updatePaddleOCRForDocuments(currentOCREngine, 'receipt');
+        showStatus('Receipt mode enabled - optimized for thermal receipts and price extraction', 'info');
+    } else if (!receiptMode && currentEngine === 'paddle') {
+        // Reset to default configuration
+        showStatus('Receipt mode disabled', 'info');
     }
 }
 

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Receipt OCR Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #1976d2;
+            color: #0d47a1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        #preview {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .results {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .receipt-fields {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .field-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .field-label {
+            font-weight: bold;
+            color: #495057;
+            min-width: 120px;
+        }
+        .field-value {
+            color: #212529;
+            flex: 1;
+            text-align: right;
+        }
+        .line-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .item-name {
+            flex: 1;
+        }
+        .item-price {
+            font-weight: bold;
+            color: #28a745;
+        }
+        h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .file-list {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .file-item {
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .file-item:hover {
+            background: #e9ecef;
+        }
+        .file-item.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Receipt OCR Test - Compare Tesseract vs Optimized PaddleOCR</h1>
+    
+    <div class="info">
+        ℹ️ <strong>Test Receipt OCR:</strong> This page compares standard Tesseract OCR with receipt-optimized PaddleOCR. 
+        The optimized version includes thermal print enhancement, field extraction, and price detection.
+    </div>
+    
+    <div class="controls">
+        <h3>1. Select Receipt Directory:</h3>
+        <button id="loadReceipts">Load Receipts from /home/siva/Projects/OCR and Semantic search/receipts_extracted/2022/us</button>
+        
+        <div id="fileList" class="file-list" style="display: none;"></div>
+        
+        <h3>2. Or Upload Receipt:</h3>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+        
+        <h3>3. Process Selected Receipt:</h3>
+        <button id="processBtn" disabled>Process with Both Engines</button>
+    </div>
+    
+    <div id="status" class="status info">Ready to process receipts</div>
+    
+    <div class="container">
+        <div class="section">
+            <h3>Original Receipt</h3>
+            <img id="preview" />
+            <div id="imageInfo" style="margin-top: 10px; color: #666;"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Tesseract OCR Results</h3>
+            <div id="tesseractResults" class="results">No results yet</div>
+            <div id="tesseractFields" class="receipt-fields" style="display: none;">
+                <h4>Extracted Fields (Tesseract):</h4>
+                <div id="tesseractFieldsList"></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>Optimized PaddleOCR Results</h3>
+            <div id="paddleResults" class="results">No results yet</div>
+            <div id="paddleFields" class="receipt-fields" style="display: none;">
+                <h4>Extracted Fields (PaddleOCR):</h4>
+                <div id="paddleFieldsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ppOCRImprovedEngine } from './src/ppocr-improved-engine.js';
+        import { tesseractOCREngine } from './src/tesseract-ocr-engine.js';
+        import { 
+            RECEIPT_OCR_CONFIG, 
+            updatePaddleOCRForDocuments,
+            extractReceiptFields 
+        } from './src/document-ocr-config.js';
+        
+        let currentImage = null;
+        let currentFileName = '';
+        let receiptFiles = [];
+        
+        // Initialize OCR engines
+        async function initializeOCR() {
+            setStatus('Initializing OCR engines...', 'info');
+            try {
+                await Promise.all([
+                    ppOCRImprovedEngine.initialize((progress) => {
+                        console.log('PaddleOCR:', progress.message);
+                    }),
+                    tesseractOCREngine.initialize((progress) => {
+                        console.log('Tesseract:', progress.message);
+                    })
+                ]);
+                setStatus('OCR engines ready!', 'success');
+                document.getElementById('processBtn').disabled = false;
+            } catch (error) {
+                setStatus('Failed to initialize OCR: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Load receipt files
+        document.getElementById('loadReceipts').addEventListener('click', async () => {
+            // For demonstration, we'll list some common receipt image names
+            // In a real implementation, you'd use a server endpoint to list files
+            const receiptPath = '/home/siva/Projects/OCR and Semantic search/receipts_extracted/2022/us/';
+            const commonReceiptNames = [
+                'receipt_001.jpg', 'receipt_002.jpg', 'receipt_003.jpg',
+                'receipt_001.png', 'receipt_002.png', 'receipt_003.png',
+                'receipt1.jpg', 'receipt2.jpg', 'receipt3.jpg',
+                'receipt.jpg', 'receipt.png'
+            ];
+            
+            const fileListDiv = document.getElementById('fileList');
+            fileListDiv.innerHTML = '<p>Common receipt file names (select one to test):</p>';
+            
+            commonReceiptNames.forEach(filename => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = filename;
+                fileItem.onclick = () => selectReceiptFile(receiptPath + filename, filename);
+                fileListDiv.appendChild(fileItem);
+            });
+            
+            fileListDiv.style.display = 'block';
+            setStatus('Select a receipt file to process', 'info');
+        });
+        
+        // Select receipt file
+        function selectReceiptFile(path, filename) {
+            currentFileName = filename;
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.textContent === filename) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Note: In a real implementation, you'd load the file from the server
+            // For now, we'll show a message
+            setStatus(`Selected: ${filename} - Please use the file upload to load this receipt`, 'info');
+        }
+        
+        // Handle file upload
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadFile(file);
+            }
+        });
+        
+        function loadFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                document.getElementById('preview').src = currentImage;
+                
+                const img = new Image();
+                img.onload = () => {
+                    document.getElementById('imageInfo').textContent = 
+                        `${file.name} - ${img.width}x${img.height} pixels`;
+                };
+                img.src = currentImage;
+                
+                setStatus(`Receipt loaded: ${file.name}. Click "Process with Both Engines" to compare.`, 'success');
+                document.getElementById('processBtn').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Process receipt
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (!currentImage) {
+                setStatus('Please select a receipt first', 'error');
+                return;
+            }
+            
+            setStatus('Processing receipt with both engines...', 'info');
+            
+            try {
+                const response = await fetch(currentImage);
+                const blob = await response.blob();
+                
+                // Process with Tesseract
+                const tesseractStart = Date.now();
+                const tesseractResults = await tesseractOCREngine.process(blob);
+                const tesseractTime = Date.now() - tesseractStart;
+                
+                // Process with optimized PaddleOCR
+                updatePaddleOCRForDocuments(ppOCRImprovedEngine, 'receipt');
+                const paddleStart = Date.now();
+                const paddleResults = await ppOCRImprovedEngine.process(blob);
+                const paddleTime = Date.now() - paddleStart;
+                
+                // Display results
+                displayTesseractResults(tesseractResults, tesseractTime);
+                displayPaddleResults(paddleResults, paddleTime);
+                
+                setStatus(`Processing complete! Tesseract: ${tesseractTime}ms | PaddleOCR: ${paddleTime}ms`, 'success');
+            } catch (error) {
+                setStatus('Processing failed: ' + error.message, 'error');
+                console.error(error);
+            }
+        });
+        
+        // Display Tesseract results
+        function displayTesseractResults(results, processingTime) {
+            const resultsDiv = document.getElementById('tesseractResults');
+            const fieldsDiv = document.getElementById('tesseractFields');
+            
+            if (!results || results.length === 0) {
+                resultsDiv.textContent = 'No text detected';
+                fieldsDiv.style.display = 'none';
+                return;
+            }
+            
+            let output = `=== Tesseract OCR Results ===\n`;
+            output += `Processing Time: ${processingTime}ms\n`;
+            output += `Text Regions Found: ${results.length}\n\n`;
+            
+            // Extract text
+            const text = results.map(r => r.text).join('\n');
+            output += '=== Full Text ===\n' + text;
+            
+            resultsDiv.textContent = output;
+            
+            // Extract fields
+            const fields = extractReceiptFields(results);
+            displayFields(fields, 'tesseractFieldsList');
+            fieldsDiv.style.display = 'block';
+        }
+        
+        // Display PaddleOCR results
+        function displayPaddleResults(results, processingTime) {
+            const resultsDiv = document.getElementById('paddleResults');
+            const fieldsDiv = document.getElementById('paddleFields');
+            
+            if (!results || results.length === 0) {
+                resultsDiv.textContent = 'No text detected';
+                fieldsDiv.style.display = 'none';
+                return;
+            }
+            
+            let output = `=== Optimized PaddleOCR Results (Receipt Mode) ===\n`;
+            output += `Processing Time: ${processingTime}ms\n`;
+            output += `Text Regions Found: ${results.length}\n\n`;
+            
+            // Sort results by position
+            const sortedResults = [...results].sort((a, b) => {
+                const aY = a.box ? Math.min(...a.box.map(p => p[1])) : 0;
+                const bY = b.box ? Math.min(...b.box.map(p => p[1])) : 0;
+                const aX = a.box ? Math.min(...a.box.map(p => p[0])) : 0;
+                const bX = b.box ? Math.min(...b.box.map(p => p[0])) : 0;
+                
+                if (Math.abs(aY - bY) < 15) {
+                    return aX - bX;
+                }
+                return aY - bY;
+            });
+            
+            // Group by lines
+            const lines = [];
+            let currentLine = [];
+            let lastY = -1;
+            
+            sortedResults.forEach(result => {
+                const y = result.box ? Math.min(...result.box.map(p => p[1])) : 0;
+                
+                if (lastY !== -1 && Math.abs(y - lastY) > 20) {
+                    if (currentLine.length > 0) {
+                        lines.push(currentLine.join(' '));
+                        currentLine = [];
+                    }
+                }
+                
+                currentLine.push(result.text);
+                lastY = y;
+            });
+            
+            if (currentLine.length > 0) {
+                lines.push(currentLine.join(' '));
+            }
+            
+            output += '=== Full Text (Grouped by Line) ===\n';
+            lines.forEach(line => {
+                output += line + '\n';
+            });
+            
+            resultsDiv.textContent = output;
+            
+            // Extract fields
+            const fields = extractReceiptFields(results);
+            displayFields(fields, 'paddleFieldsList');
+            fieldsDiv.style.display = 'block';
+        }
+        
+        // Display extracted fields
+        function displayFields(fields, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            // Store info
+            if (fields.storeName) {
+                container.appendChild(createFieldItem('Store Name', fields.storeName));
+            }
+            if (fields.storeAddress) {
+                container.appendChild(createFieldItem('Store Address', fields.storeAddress));
+            }
+            
+            // Date/Time
+            if (fields.date) {
+                container.appendChild(createFieldItem('Date', fields.date));
+            }
+            if (fields.time) {
+                container.appendChild(createFieldItem('Time', fields.time));
+            }
+            
+            // Items
+            if (fields.items && fields.items.length > 0) {
+                const itemsContainer = document.createElement('div');
+                itemsContainer.innerHTML = '<h5>Items:</h5>';
+                fields.items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'line-item';
+                    itemDiv.innerHTML = `
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-price">${item.price}</span>
+                    `;
+                    itemsContainer.appendChild(itemDiv);
+                });
+                container.appendChild(itemsContainer);
+            }
+            
+            // Totals
+            if (fields.subtotal) {
+                container.appendChild(createFieldItem('Subtotal', fields.subtotal));
+            }
+            if (fields.tax) {
+                container.appendChild(createFieldItem('Tax', fields.tax));
+            }
+            if (fields.total) {
+                container.appendChild(createFieldItem('Total', fields.total));
+            }
+            
+            // Payment
+            if (fields.paymentMethod) {
+                container.appendChild(createFieldItem('Payment Method', fields.paymentMethod));
+            }
+            
+            // Receipt number
+            if (fields.receiptNumber) {
+                container.appendChild(createFieldItem('Receipt #', fields.receiptNumber));
+            }
+        }
+        
+        // Create field item
+        function createFieldItem(label, value) {
+            const div = document.createElement('div');
+            div.className = 'field-item';
+            div.innerHTML = `
+                <span class="field-label">${label}:</span>
+                <span class="field-value">${value}</span>
+            `;
+            return div;
+        }
+        
+        // Set status message
+        function setStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', initializeOCR);
+    </script>
+</body>
+</html>
