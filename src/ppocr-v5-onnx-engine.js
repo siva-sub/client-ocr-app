@@ -20,7 +20,8 @@ import { ocrCache } from './ocr-cache-manager.js';
 
 // Configure ONNX Runtime
 const isGitHubPages = window.location.hostname.includes('github.io');
-const wasmPath = isGitHubPages ? '/client-ocr-app/assets/' : '/public/assets/';
+const basePath = isGitHubPages ? '/client-ocr-app' : '';
+const wasmPath = `${basePath}/assets/`;
 ort.env.wasm.wasmPaths = wasmPath;
 ort.env.wasm.numThreads = 1;
 
@@ -31,7 +32,7 @@ export class PPOCRv5OnnxEngine {
         this.useCache = options.useCache !== false;
         
         // Model paths based on model name
-        const modelBasePath = isGitHubPages ? '/client-ocr-app/models/' : '/public/models/';
+        const modelBasePath = `${basePath}/models/`;
         this.modelPaths = {
             'PP-OCRv5': {
                 det: modelBasePath + 'PP-OCRv5/det/det.onnx',

@@ -12,7 +12,7 @@ import { ocrCache } from './ocr-cache-manager.js';
 // Configure ONNX Runtime
 const isGitHubPages = window.location.hostname.includes('github.io');
 const basePath = isGitHubPages ? '/client-ocr-app' : '';
-const wasmPath = `${basePath}/public/assets/`;
+const wasmPath = `${basePath}/assets/`;
 
 ort.env.wasm.wasmPaths = wasmPath;
 ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
@@ -76,11 +76,16 @@ export class OnnxOCREngine {
                 this.config.modelPath;
 
             // Update selected models info
+            // Fix model paths for GitHub Pages
+            const modelPathPrefix = this.config.modelPath.startsWith('/') ? 
+                this.config.modelPath.substring(1) : 
+                this.config.modelPath;
+            
             this.selectedModels = {
-                det: `${this.config.modelPath}/det/det.onnx`,
-                cls: this.config.useAngleCls ? `${this.config.modelPath}/cls/cls.onnx` : 'disabled',
-                rec: `${this.config.modelPath}/rec/rec.onnx`,
-                dict: `${this.config.modelPath}/ppocrv5_dict.txt`
+                det: `${modelPathPrefix}/det/det.onnx`,
+                cls: this.config.useAngleCls ? `${modelPathPrefix}/cls/cls.onnx` : 'disabled',
+                rec: `${modelPathPrefix}/rec/rec.onnx`,
+                dict: `${modelPathPrefix}/ppocrv5_dict.txt`
             };
 
             progressCallback?.({

@@ -14,7 +14,7 @@ export class PaddleOCR {
         try {
             // Create OnnxOCR engine instance
             this.engine = new OnnxOCREngine({
-                modelPath: '/public/models/PP-OCRv5',
+                modelPath: 'models/PP-OCRv5',
                 useAngleCls: true,
                 useGPU: false
             });
