@@ -6,7 +6,7 @@
 
 import * as ort from 'onnxruntime-web';
 import { DetectionPreprocessor, RecognitionPreprocessor, AngleClassificationPreprocessor } from './onnx-ocr-preprocessing.js';
-import { DBPostProcess, CTCLabelDecode } from './onnx-ocr-postprocessing.js';
+import { DBPostProcessor, CTCDecoder } from './onnx-ocr-postprocessing.js';
 import { ocrCache } from './ocr-cache-manager.js';
 
 // Configure ONNX Runtime
@@ -45,7 +45,7 @@ export class OnnxOCREngine {
         this.clsPreprocessor = new AngleClassificationPreprocessor();
 
         // Post processors
-        this.dbPostProcess = new DBPostProcess({
+        this.dbPostProcess = new DBPostProcessor({
             thresh: this.config.detDbThresh,
             box_thresh: this.config.detDbBoxThresh,
             max_candidates: 1000,
@@ -234,7 +234,7 @@ export class OnnxOCREngine {
 
                 // Decode text
                 const logits = recOutput.softmax_0 || recOutput.output;
-                const decoder = new CTCLabelDecode(this.dictionary);
+                const decoder = new CTCDecoder(this.dictionary);
                 const [text, confidence] = decoder.decode(logits.data, logits.dims);
 
                 if (confidence >= this.config.dropScore) {

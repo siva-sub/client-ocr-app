@@ -3,6 +3,8 @@
  * Pure JavaScript implementation without OpenCV dependency
  */
 
+import * as ort from 'onnxruntime-web';
+
 /**
  * Image preprocessing utilities
  */
@@ -431,6 +433,55 @@ export class TextRegionExtractor {
             d: scaleY,
             e: -src[0][0] * scaleX,
             f: -src[0][1] * scaleY
+        };
+    }
+}
+
+/**
+ * Angle Classification Preprocessor
+ * Preprocesses images for angle classification model
+ */
+export class AngleClassificationPreprocessor {
+    constructor(options = {}) {
+        this.mean = options.mean || [0.485, 0.456, 0.406];
+        this.std = options.std || [0.229, 0.224, 0.225];
+        this.cls_image_shape = options.cls_image_shape || [3, 48, 192];
+    }
+
+    async preprocess(canvas) {
+        const [c, h, w] = this.cls_image_shape;
+        
+        // Create a new canvas for preprocessing
+        const processCanvas = document.createElement('canvas');
+        processCanvas.width = w;
+        processCanvas.height = h;
+        const ctx = processCanvas.getContext('2d');
+        
+        // Resize image
+        ctx.drawImage(canvas, 0, 0, w, h);
+        
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        
+        // Create tensor data
+        const tensorData = new Float32Array(c * h * w);
+        
+        // Normalize and convert to CHW format
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const idx = (y * w + x) * 4;
+                
+                // RGB channels
+                tensorData[0 * h * w + y * w + x] = (data[idx] / 255.0 - this.mean[0]) / this.std[0];     // R
+                tensorData[1 * h * w + y * w + x] = (data[idx + 1] / 255.0 - this.mean[1]) / this.std[1]; // G
+                tensorData[2 * h * w + y * w + x] = (data[idx + 2] / 255.0 - this.mean[2]) / this.std[2]; // B
+            }
+        }
+        
+        return {
+            tensor: new ort.Tensor('float32', tensorData, [1, c, h, w]),
+            originalSize: [canvas.height, canvas.width]
         };
     }
 }
