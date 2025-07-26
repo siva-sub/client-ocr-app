@@ -1,5 +1,6 @@
 import { ppOCRImprovedEngine } from './ppocr-improved-engine.js';
 import { ppOCREngine } from './ppocr-onnx-engine.js';
+import { ppOCRv5Engine } from './ppocr-v5-enhanced-engine.js';
 import { tesseractOCREngine } from './tesseract-ocr-engine.js';
 import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './infographic-ocr-config.js';
 import { DOCUMENT_OCR_CONFIG, updatePaddleOCRForDocuments, extractReceiptFields } from './document-ocr-config.js';
@@ -15,11 +16,14 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/client-ocr-app/pdf.worker.min.js';
 let currentImageBlob = null;
 let currentEngine = 'tesseract';  // Default to tesseract for better accuracy
 let currentPreprocessing = 'improved'; // 'standard' or 'improved'
+let currentModelVersion = 'PP-OCRv5'; // Model version for enhanced engine
 let currentOCREngine = tesseractOCREngine;
 let infographicMode = false; // Flag for infographic optimization
 let documentMode = false; // Flag for document optimization
 let receiptMode = false; // Flag for receipt optimization
 let pdfMode = false; // Flag for PDF optimization
+let selectedFiles = []; // Array to store multiple files
+let startTime = 0; // Track processing start time
 
 // Add getter to prevent external modification
 Object.defineProperty(window, 'currentEngine', {
@@ -42,36 +46,97 @@ const copyBtn = document.getElementById('copyBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const resetBtn = document.getElementById('resetBtn');
 
+// New UI elements
+const fileList = document.getElementById('fileList');
+const fileListItems = document.getElementById('fileListItems');
+const clearFilesBtn = document.getElementById('clearFilesBtn');
+const progressArea = document.getElementById('progressArea');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const elapsedTime = document.getElementById('elapsedTime');
+const modelVersion = document.getElementById('modelVersion');
+const globalTip = document.getElementById('globalTip');
+
+// Show global tip notification
+function showGlobalTip(message, color = '#7b8cff') {
+    globalTip.textContent = message;
+    globalTip.style.background = color;
+    globalTip.style.display = 'block';
+    globalTip.style.opacity = '1';
+    clearTimeout(globalTip._timer);
+    globalTip._timer = setTimeout(() => {
+        globalTip.style.opacity = '0';
+        setTimeout(() => { globalTip.style.display = 'none'; }, 400);
+    }, 1500);
+}
+
 // Initialize the app
 async function initializeApp() {
     console.log('Initializing OCR engines...');
     showStatus('Loading OCR engines...', 'info');
     
     try {
-        // Initialize all engines
-        await Promise.all([
-            ppOCRImprovedEngine.initialize((progress) => {
-                if (currentEngine === 'paddle' && currentPreprocessing === 'improved') {
-                    showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
-                }
-                
-                // Update loading indicator if visible
-                const loadingText = document.querySelector('#loadingIndicator p');
-                if (loadingText && progress.progress !== undefined && currentEngine === 'paddle' && currentPreprocessing === 'improved') {
-                    loadingText.textContent = `${progress.message} (${progress.progress}%)`;
-                }
-            }),
-            ppOCREngine.initialize((progress) => {
-                if (currentEngine === 'paddle' && currentPreprocessing === 'standard') {
-                    showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
-                }
-            }),
+        // Initialize engines based on selection
+        const initPromises = [];
+        
+        // Always initialize Tesseract
+        initPromises.push(
             tesseractOCREngine.initialize((progress) => {
                 if (currentEngine === 'tesseract') {
                     showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
                 }
             })
-        ]);
+        );
+        
+        // Initialize PaddleOCR engines only if needed
+        if (modelVersion && modelVersion.value) {
+            const selectedModel = modelVersion.value;
+            if (selectedModel === 'PP-OCRv5' || selectedModel === 'PP-OCRv4' || selectedModel === 'ch_ppocr_server_v2.0') {
+                // Set the model name on the engine first
+                ppOCRv5Engine.setModel(selectedModel);
+                // Initialize enhanced PP-OCRv5 engine
+                initPromises.push(
+                    ppOCRv5Engine.initialize((progress) => {
+                        if (currentEngine === 'paddle') {
+                            showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                            if (typeof updateProgress === 'function') {
+                                updateProgress(progress.progress || 0, progress.message);
+                            }
+                        }
+                    })
+                );
+            } else {
+                // Initialize legacy engines
+                initPromises.push(
+                    ppOCRImprovedEngine.initialize((progress) => {
+                        if (currentEngine === 'paddle' && currentPreprocessing === 'improved') {
+                            showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                        }
+                    }),
+                    ppOCREngine.initialize((progress) => {
+                        if (currentEngine === 'paddle' && currentPreprocessing === 'standard') {
+                            showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                        }
+                    })
+                );
+            }
+        } else {
+            // Initialize legacy engines by default
+            initPromises.push(
+                ppOCRImprovedEngine.initialize((progress) => {
+                    if (currentEngine === 'paddle' && currentPreprocessing === 'improved') {
+                        showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                    }
+                }),
+                ppOCREngine.initialize((progress) => {
+                    if (currentEngine === 'paddle' && currentPreprocessing === 'standard') {
+                        showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                    }
+                })
+            );
+        }
+        
+        await Promise.all(initPromises);
         
         console.log('OCR engines loaded successfully!');
         showStatus('Ready to process images', 'success');
@@ -82,7 +147,18 @@ async function initializeApp() {
         if (checkedEngine) {
             currentEngine = checkedEngine.value;
             if (currentEngine === 'paddle') {
-                currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+                // Check if using enhanced engine
+                if (modelVersion) {
+                    const selectedModel = modelVersion.value;
+                    if (selectedModel === 'PP-OCRv5' || selectedModel === 'PP-OCRv4' || selectedModel === 'ch_ppocr_server_v2.0') {
+                        currentOCREngine = ppOCRv5Engine;
+                        currentModelVersion = selectedModel;
+                    } else {
+                        currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+                    }
+                } else {
+                    currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+                }
                 document.getElementById('paddleOptions').style.display = 'block';
             } else {
                 currentOCREngine = tesseractOCREngine;
@@ -147,6 +223,11 @@ function setupEventListeners() {
         radio.addEventListener('change', handlePreprocessingChange);
     });
     
+    // Model version selection
+    if (modelVersion) {
+        modelVersion.addEventListener('change', handleModelVersionChange);
+    }
+    
     // Model selection for PaddleOCR
     document.getElementById('detectionModel').addEventListener('change', handleModelChange);
     document.getElementById('recognitionModel').addEventListener('change', handleModelChange);
@@ -156,6 +237,11 @@ function setupEventListeners() {
     const configPreset = document.getElementById('configPreset');
     if (configPreset) {
         configPreset.addEventListener('change', handleConfigPresetChange);
+    }
+    
+    // Clear files button
+    if (clearFilesBtn) {
+        clearFilesBtn.addEventListener('click', handleClearFiles);
     }
     
     // Infographic mode toggle
@@ -184,8 +270,21 @@ async function handleEngineChange(event) {
     
     // Update current OCR engine based on both engine and preprocessing selection
     if (currentEngine === 'paddle') {
-        currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
-        console.log('Set currentOCREngine to PaddleOCR:', currentPreprocessing);
+        // Check if using enhanced engine
+        if (modelVersion) {
+            const selectedModel = modelVersion.value;
+            if (selectedModel === 'PP-OCRv5' || selectedModel === 'PP-OCRv4' || selectedModel === 'ch_ppocr_server_v2.0') {
+                currentOCREngine = ppOCRv5Engine;
+                currentModelVersion = selectedModel;
+                console.log('Set currentOCREngine to PP-OCRv5 Enhanced:', selectedModel);
+            } else {
+                currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+                console.log('Set currentOCREngine to PaddleOCR:', currentPreprocessing);
+            }
+        } else {
+            currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+            console.log('Set currentOCREngine to PaddleOCR:', currentPreprocessing);
+        }
         console.log('Verify currentOCREngine:', currentOCREngine);
     } else {
         currentOCREngine = tesseractOCREngine;
@@ -203,12 +302,45 @@ async function handleEngineChange(event) {
     console.log('Final currentOCREngine:', currentOCREngine);
 }
 
+// Handle model version change
+async function handleModelVersionChange(event) {
+    const newModelVersion = event.target.value;
+    currentModelVersion = newModelVersion;
+    
+    if (currentEngine === 'paddle') {
+        if (newModelVersion === 'PP-OCRv5' || newModelVersion === 'PP-OCRv4' || newModelVersion === 'ch_ppocr_server_v2.0') {
+            // Switch to enhanced engine
+            currentOCREngine = ppOCRv5Engine;
+            
+            // Initialize if not already initialized
+            if (!ppOCRv5Engine.initialized) {
+                showStatus(`Loading ${newModelVersion} models...`, 'info');
+                try {
+                    await ppOCRv5Engine.initialize(newModelVersion, (progress) => {
+                        showStatus(progress.message, progress.status === 'ready' ? 'success' : 'info');
+                        updateProgress(progress.progress || 0, progress.message);
+                    });
+                    showStatus(`${newModelVersion} ready!`, 'success');
+                } catch (error) {
+                    console.error(`Failed to initialize ${newModelVersion}:`, error);
+                    showError(`Failed to load ${newModelVersion} models`);
+                }
+            }
+        } else {
+            // Switch back to legacy engines
+            currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
+        }
+        
+        showStatus(`Switched to ${newModelVersion} model`, 'info');
+    }
+}
+
 // Handle preprocessing change
 async function handlePreprocessingChange(event) {
     currentPreprocessing = event.target.value;
     
-    // Only update if PaddleOCR is selected
-    if (currentEngine === 'paddle') {
+    // Only update if PaddleOCR is selected and not using enhanced engine
+    if (currentEngine === 'paddle' && (!modelVersion || !['PP-OCRv5', 'PP-OCRv4', 'ch_ppocr_server_v2.0'].includes(modelVersion.value))) {
         currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
         
         // If using standard preprocessing, we need to update model config and reinitialize
@@ -321,13 +453,63 @@ async function handleModelChange() {
     }
 }
 
+// Clear files
+function handleClearFiles() {
+    fileInput.value = '';
+    selectedFiles = [];
+    updateFileList();
+    reset();
+}
+
+// Update file list display
+function updateFileList() {
+    fileListItems.innerHTML = '';
+    if (selectedFiles.length === 0) {
+        fileListItems.innerHTML = '<li style="color:#888;">No files selected</li>';
+        fileList.style.display = 'none';
+        return;
+    }
+    
+    fileList.style.display = 'block';
+    selectedFiles.forEach((file, index) => {
+        const li = document.createElement('li');
+        li.textContent = file.name;
+        fileListItems.appendChild(li);
+    });
+}
+
+// Update progress display
+function updateProgress(percent, message) {
+    if (progressArea) {
+        progressArea.style.display = 'flex';
+        progressBar.style.width = percent + '%';
+        progressText.textContent = message || `Processing... ${percent}%`;
+        
+        if (startTime > 0) {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            elapsedTime.textContent = `Elapsed: ${elapsed}s`;
+        }
+    }
+}
+
 // File handling
 function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
-        loadFile(file);
+    const files = Array.from(event.target.files);
+    selectedFiles = files.filter(file => 
+        file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+    
+    if (selectedFiles.length > 0) {
+        updateFileList();
+        if (selectedFiles.length === 1) {
+            loadFile(selectedFiles[0]);
+        } else {
+            // Show preview for first file
+            loadFile(selectedFiles[0]);
+            showStatus(`${selectedFiles.length} files selected. Click "Extract Text" to process all.`, 'info');
+        }
     } else {
-        showError('Please select a valid image or PDF file');
+        showError('Please select valid image or PDF files');
     }
 }
 
@@ -345,11 +527,26 @@ function handleDrop(event) {
     event.preventDefault();
     uploadArea.classList.remove('dragover');
     
-    const file = event.dataTransfer.files[0];
-    if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
-        loadFile(file);
+    const files = Array.from(event.dataTransfer.files);
+    selectedFiles = files.filter(file => 
+        file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+    
+    if (selectedFiles.length > 0) {
+        // Update file input
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+        
+        updateFileList();
+        if (selectedFiles.length === 1) {
+            loadFile(selectedFiles[0]);
+        } else {
+            loadFile(selectedFiles[0]);
+            showStatus(`${selectedFiles.length} files dropped. Click "Extract Text" to process all.`, 'info');
+        }
     } else {
-        showError('Please drop a valid image or PDF file');
+        showError('Please drop valid image or PDF files');
     }
 }
 
@@ -461,68 +658,77 @@ async function loadFile(file) {
 
 // Process image with current OCR engine
 async function processImage() {
-    if (!currentImageBlob) {
+    if (!currentImageBlob && selectedFiles.length === 0) {
         showError('Please upload an image first');
         return;
     }
     
     resultsSection.style.display = 'block';
-    loadingIndicator.style.display = 'flex';
     ocrResults.innerHTML = '';
+    startTime = Date.now();
+    
+    // Determine files to process
+    const filesToProcess = selectedFiles.length > 0 ? selectedFiles : [currentImageBlob];
+    const allResults = [];
     
     // Update loading text
-    const loadingText = document.querySelector('#loadingIndicator p');
     let engineName = currentEngine === 'paddle' ? 'PaddleOCR' : 'Tesseract.js';
     if (currentEngine === 'paddle') {
-        engineName += ` (${currentPreprocessing === 'improved' ? 'Improved PPU' : 'Standard'})`;
-    }
-    if (loadingText) {
-        loadingText.textContent = `Processing image with ${engineName}...`;
+        if (modelVersion && ['PP-OCRv5', 'PP-OCRv4', 'ch_ppocr_server_v2.0'].includes(modelVersion.value)) {
+            engineName = `PaddleOCR ${modelVersion.value}`;
+        } else {
+            engineName += ` (${currentPreprocessing === 'improved' ? 'Improved PPU' : 'Standard'})`;
+        }
     }
     
+    updateProgress(0, `Processing ${filesToProcess.length} file(s) with ${engineName}...`);
+    
     try {
-        console.log(`Processing image with ${engineName}...`);
+        console.log(`Processing ${filesToProcess.length} files with ${engineName}...`);
         console.log('Current engine variable:', currentEngine);
         console.log('Current OCR engine object:', currentOCREngine);
-        console.log('Current OCR engine name:', currentOCREngine.constructor.name);
-        showStatus('Detecting and recognizing text...', 'info');
         
-        const startTime = performance.now();
-        
-        // Make sure we're using the correct engine
-        if (currentEngine === 'paddle' && currentOCREngine === tesseractOCREngine) {
-            console.error('Engine mismatch detected! Expected PaddleOCR but got Tesseract');
-            // Force correct engine
-            currentOCREngine = currentPreprocessing === 'improved' ? ppOCRImprovedEngine : ppOCREngine;
-            console.log('Forced engine to:', currentOCREngine);
-        }
-        
-        // Apply optimal configuration if PaddleOCR is selected
-        if (currentEngine === 'paddle') {
-            const configPreset = document.getElementById('configPreset');
-            if (configPreset && configPreset.value) {
-                console.log('Applying optimal configuration:', configPreset.value);
-                applyOptimalConfig(currentOCREngine, configPreset.value);
+        // Process each file
+        for (let i = 0; i < filesToProcess.length; i++) {
+            const file = filesToProcess[i];
+            const progress = ((i / filesToProcess.length) * 100).toFixed(0);
+            updateProgress(progress, `Processing ${file.name}...`);
+            
+            // Apply optimal configuration if PaddleOCR is selected
+            if (currentEngine === 'paddle') {
+                const configPreset = document.getElementById('configPreset');
+                if (configPreset && configPreset.value) {
+                    console.log('Applying optimal configuration:', configPreset.value);
+                    applyOptimalConfig(currentOCREngine, configPreset.value);
+                }
             }
+            
+            // Process with current OCR engine
+            const startTime = performance.now();
+            const results = await currentOCREngine.process(file);
+            const processingTime = performance.now() - startTime;
+            
+            console.log(`${file.name} processed in ${processingTime.toFixed(2)}ms`);
+            
+            allResults.push({
+                filename: file.name,
+                results: results,
+                processingTime: processingTime
+            });
         }
         
-        // Process with current OCR engine
-        const results = await currentOCREngine.process(currentImageBlob);
-        
-        const processingTime = performance.now() - startTime;
-        console.log(`Processing completed in ${processingTime.toFixed(2)}ms`);
+        updateProgress(100, 'Processing complete!');
         console.log('OCR Results:', results);
         
         // Display results
         loadingIndicator.style.display = 'none';
         
-        if (results && results.length > 0) {
-            displayResults(results, processingTime, engineName);
-            showStatus(`Text extraction complete! Found ${results.length} text regions.`, 'success');
-        } else {
-            displayResults([], processingTime, engineName);
-            showStatus('No text found in the image', 'warning');
-        }
+        // Display all results
+        displayMultipleResults(allResults, engineName);
+        
+        const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        showStatus(`Processed ${allResults.length} file(s) in ${totalTime}s`, 'success');
+        showGlobalTip(`Extraction complete! ${allResults.length} file(s) processed.`);
         
     } catch (error) {
         console.error('OCR processing error:', error);
@@ -550,8 +756,76 @@ async function processImage() {
     }
 }
 
+// Display multiple file results
+function displayMultipleResults(fileResults, engineName = 'PaddleOCR') {
+    loadingIndicator.style.display = 'none';
+    ocrResults.innerHTML = '';
+    
+    if (fileResults.length === 1) {
+        // Single file - use existing display method
+        displayResults(fileResults[0].results, fileResults[0].processingTime, engineName, fileResults[0].filename);
+        return;
+    }
+    
+    // Multiple files - create result blocks
+    fileResults.forEach(fileResult => {
+        const resultBlock = document.createElement('div');
+        resultBlock.className = 'result-block';
+        
+        // Create image preview if it's an image file
+        let imgPreviewHTML = '';
+        if (fileResult.filename.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            const file = selectedFiles.find(f => f.name === fileResult.filename);
+            if (file) {
+                const url = URL.createObjectURL(file);
+                imgPreviewHTML = `<img class="ocr-image-preview" src="${url}" alt="${fileResult.filename}">`;
+            }
+        }
+        
+        // Extract text from results
+        const text = fileResult.results.map(r => r.text || r).join('\n');
+        
+        // Create copy button
+        const copyBtnHTML = `<button class="copy-btn" data-text="${escapeHtml(text)}" title="Copy text">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <rect x="5" y="5" width="10" height="12" rx="2" fill="#7b8cff"/>
+                <rect x="3" y="3" width="10" height="12" rx="2" stroke="#7b8cff" stroke-width="1.5" fill="none"/>
+            </svg>
+        </button>`;
+        
+        resultBlock.innerHTML = `
+            ${imgPreviewHTML}
+            <div class="ocr-text-content">
+                <div class="result-header">
+                    <b class="result-filename">${fileResult.filename}</b>
+                    ${copyBtnHTML}
+                </div>
+                <pre>${escapeHtml(text)}</pre>
+            </div>
+        `;
+        
+        ocrResults.appendChild(resultBlock);
+    });
+    
+    // Add event listeners for copy buttons
+    ocrResults.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const text = this.getAttribute('data-text');
+            navigator.clipboard.writeText(text).then(() => {
+                showGlobalTip('Copied to clipboard!');
+            }).catch(() => {
+                showGlobalTip('Failed to copy', '#f87171');
+            });
+        });
+    });
+    
+    // Update download button for ZIP
+    downloadBtn.textContent = '💾 Download All (ZIP)';
+    downloadBtn.onclick = () => downloadAllAsZip(fileResults);
+}
+
 // Display OCR results
-function displayResults(results, processingTime, engineName = 'PaddleOCR') {
+function displayResults(results, processingTime, engineName = 'PaddleOCR', filename = null) {
     // Check if results is from PDF (array of page results)
     const isPDF = Array.isArray(results) && results[0]?.page !== undefined;
     
@@ -733,10 +1007,43 @@ function downloadText() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `pp-ocrv5-result-${Date.now()}.txt`;
+        a.download = `ocr-result-${Date.now()}.txt`;
         a.click();
         URL.revokeObjectURL(url);
     }
+}
+
+// Download all results as ZIP
+async function downloadAllAsZip(fileResults) {
+    // Check if we have JSZip available
+    if (typeof JSZip === 'undefined') {
+        // Load JSZip dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        script.onload = () => {
+            downloadAllAsZip(fileResults);
+        };
+        document.head.appendChild(script);
+        return;
+    }
+    
+    const zip = new JSZip();
+    
+    fileResults.forEach(fileResult => {
+        const text = fileResult.results.map(r => r.text || r).join('\n');
+        const txtFilename = fileResult.filename.replace(/\.[^.]+$/, '.txt');
+        zip.file(txtFilename, text);
+    });
+    
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ocr-results-${Date.now()}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showGlobalTip('Downloaded all results as ZIP');
 }
 
 // Reset the app
