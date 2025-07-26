@@ -1,8 +1,8 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "Client-side OCR processing app using Tesseract.js - Extract text from images and PDFs directly in your browser",
+  "description": "Advanced client-side OCR app with PaddleOCR and Tesseract.js - High-performance text extraction from images and PDFs with specialized configurations for documents, receipts, ID cards, and more",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
   "repository": {
     "type": "git",
@@ -18,12 +18,21 @@
     "optical-character-recognition",
     "tesseract",
     "tesseract.js",
+    "paddleocr",
+    "onnx",
+    "onnxruntime",
     "client-side",
     "browser",
     "text-extraction",
     "image-to-text",
     "pdf-ocr",
-    "pdf-text-extraction"
+    "pdf-text-extraction",
+    "receipt-ocr",
+    "document-ocr",
+    "id-card-ocr",
+    "thermal-receipt",
+    "webgl",
+    "wasm"
   ],
   "scripts": {
     "dev": "vite",
@@ -32,6 +41,7 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "canvas": "^3.1.2",
     "onnxruntime-web": "^1.22.0",
     "pdfjs-dist": "^3.11.174",
     "tesseract.js": "^5.0.4"

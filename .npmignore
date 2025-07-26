@@ -8,15 +8,32 @@ create-sample-image.html
 download-ppocr-models.sh
 deploy.sh
 
-# Source files (we'll publish dist)
-src/
-public/
+# Test files
+test-*.html
+test-*.js
+*-test.html
+*-test.js
+local-*.html
+local-*.js
+test-*.png
+test-*.jpg
+tesseract-*.json
+receipt-test.png
+test-document.png
+pdf-ocr-test*.html
 
 # Build files
 vite.config.js
+dist/
 
-# Documentation
+# Documentation (keep README and CHANGELOG)
 *.md
+!README.md
+!CHANGELOG.md
+
+# Python scripts
+pdf-extract-kit/
+*.py
 
 # Logs
 *.log

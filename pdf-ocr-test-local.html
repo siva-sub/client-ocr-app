@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF OCR Test with PDF.js - Local Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .pdf-viewer-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .pdf-container, .ocr-results {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 600px;
+            overflow-y: auto;
+        }
+        #pdfCanvas {
+            border: 1px solid #ddd;
+            width: 100%;
+            height: auto;
+        }
+        .page-controls {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .test-results {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .config-selector {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .config-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .config-btn.active {
+            background: #2196F3;
+            color: white;
+            border-color: #1976D2;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .result-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .result-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .metric-value {
+            font-weight: bold;
+        }
+        .better { color: #28a745; }
+        .worse { color: #dc3545; }
+        .text-preview {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF OCR Test with PDF.js Integration</h1>
+            <p>Test all OCR configurations on PDF documents - Local Testing Only</p>
+        </div>
+        
+        <div class="controls">
+            <h3>Load PDF</h3>
+            <input type="file" id="pdfInput" accept="application/pdf">
+            <button id="loadSamplePdf">Load Sample PDF</button>
+            
+            <h3>Select OCR Configuration</h3>
+            <div class="config-selector">
+                <button class="config-btn active" data-config="tesseract">Tesseract (Baseline)</button>
+                <button class="config-btn" data-config="paddle-standard">PaddleOCR Standard</button>
+                <button class="config-btn" data-config="paddle-improved">PaddleOCR Improved</button>
+                <button class="config-btn" data-config="paddle-pdf">PaddleOCR PDF Optimized</button>
+                <button class="config-btn" data-config="paddle-document">PaddleOCR Document</button>
+            </div>
+            
+            <button id="processPage" disabled>🔍 Process Current Page</button>
+            <button id="processAllPages" disabled>📚 Process All Pages</button>
+            <button id="compareAll" disabled>🔬 Compare All Configurations</button>
+        </div>
+        
+        <div id="status" class="status info">Please load a PDF file to begin</div>
+        
+        <div class="pdf-viewer-section">
+            <div class="pdf-container">
+                <h3>PDF Preview</h3>
+                <canvas id="pdfCanvas"></canvas>
+                <div class="page-controls">
+                    <button id="prevPage" disabled>Previous</button>
+                    <span id="pageNum">Page: 0</span> / <span id="pageCount">0</span>
+                    <button id="nextPage" disabled>Next</button>
+                </div>
+            </div>
+            
+            <div class="ocr-results">
+                <h3>OCR Results</h3>
+                <div id="ocrOutput">No results yet...</div>
+            </div>
+        </div>
+        
+        <div class="test-results" id="testResults" style="display: none;">
+            <h3>Configuration Comparison Results</h3>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.93/+esm';
+        
+        // Set worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.93/build/pdf.worker.min.mjs';
+        
+        import { ppOCRImprovedEngine } from './src/ppocr-improved-engine.js';
+        import { ppOCREngine } from './src/ppocr-onnx-engine.js';
+        import { tesseractOCREngine } from './src/tesseract-ocr-engine.js';
+        import { PDF_OCR_CONFIG, updatePaddleOCRForPDF } from './src/pdf-ocr-config.js';
+        import { DOCUMENT_OCR_CONFIG, updatePaddleOCRForDocuments } from './src/document-ocr-config.js';
+        
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let currentConfig = 'tesseract';
+        let isInitialized = false;
+        
+        // Initialize OCR engines
+        async function initializeOCR() {
+            setStatus('Initializing OCR engines...', 'info');
+            try {
+                await Promise.all([
+                    ppOCRImprovedEngine.initialize((progress) => {
+                        console.log('PaddleOCR Improved:', progress.message);
+                    }),
+                    ppOCREngine.initialize((progress) => {
+                        console.log('PaddleOCR Standard:', progress.message);
+                    }),
+                    tesseractOCREngine.initialize((progress) => {
+                        console.log('Tesseract:', progress.message);
+                    })
+                ]);
+                isInitialized = true;
+                setStatus('OCR engines ready! Load a PDF to begin.', 'success');
+            } catch (error) {
+                setStatus('Failed to initialize OCR: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Render PDF page
+        async function renderPage(num) {
+            pageRendering = true;
+            
+            const page = await pdfDoc.getPage(num);
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale });
+            
+            const canvas = document.getElementById('pdfCanvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            pageRendering = false;
+            
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+            
+            document.getElementById('pageNum').textContent = `Page: ${num}`;
+            updatePageControls();
+            
+            return canvas;
+        }
+        
+        // Queue page rendering
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+        
+        // Update page controls
+        function updatePageControls() {
+            document.getElementById('prevPage').disabled = pageNum <= 1;
+            document.getElementById('nextPage').disabled = pageNum >= pdfDoc.numPages;
+            document.getElementById('processPage').disabled = false;
+            document.getElementById('processAllPages').disabled = false;
+            document.getElementById('compareAll').disabled = false;
+        }
+        
+        // Load PDF
+        async function loadPDF(url) {
+            try {
+                pdfDoc = await pdfjsLib.getDocument(url).promise;
+                document.getElementById('pageCount').textContent = pdfDoc.numPages;
+                pageNum = 1;
+                await renderPage(pageNum);
+                setStatus(`PDF loaded: ${pdfDoc.numPages} pages`, 'success');
+            } catch (error) {
+                setStatus('Error loading PDF: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Process page with OCR
+        async function processPage(canvas, config) {
+            if (!isInitialized) {
+                throw new Error('OCR engines not initialized');
+            }
+            
+            // Convert canvas to blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve));
+            
+            let results = [];
+            const startTime = Date.now();
+            
+            try {
+                switch (config) {
+                    case 'tesseract':
+                        results = await tesseractOCREngine.process(blob);
+                        break;
+                    case 'paddle-standard':
+                        results = await ppOCREngine.process(blob);
+                        break;
+                    case 'paddle-improved':
+                        results = await ppOCRImprovedEngine.process(blob);
+                        break;
+                    case 'paddle-pdf':
+                        updatePaddleOCRForPDF(ppOCRImprovedEngine);
+                        results = await ppOCRImprovedEngine.process(blob);
+                        break;
+                    case 'paddle-document':
+                        updatePaddleOCRForDocuments(ppOCRImprovedEngine, 'general');
+                        results = await ppOCRImprovedEngine.process(blob);
+                        break;
+                }
+            } catch (error) {
+                console.error(`${config} error:`, error);
+                results = [];
+            }
+            
+            const processingTime = Date.now() - startTime;
+            
+            return {
+                config,
+                results,
+                processingTime,
+                metrics: calculateMetrics(results)
+            };
+        }
+        
+        // Calculate metrics
+        function calculateMetrics(results) {
+            if (!results || results.length === 0) {
+                return {
+                    regionCount: 0,
+                    totalChars: 0,
+                    avgConfidence: 0,
+                    text: ''
+                };
+            }
+            
+            const text = results.map(r => r.text).join(' ');
+            const totalChars = text.length;
+            const totalConfidence = results.reduce((sum, r) => sum + (r.confidence || 0), 0);
+            const avgConfidence = Math.round((totalConfidence / results.length) * 100);
+            
+            return {
+                regionCount: results.length,
+                totalChars,
+                avgConfidence,
+                text
+            };
+        }
+        
+        // Display OCR results
+        function displayResults(result) {
+            const output = document.getElementById('ocrOutput');
+            let html = `<h4>${result.config}</h4>`;
+            html += `<div class="metric">Processing Time: <span class="metric-value">${result.processingTime}ms</span></div>`;
+            html += `<div class="metric">Regions Detected: <span class="metric-value">${result.metrics.regionCount}</span></div>`;
+            html += `<div class="metric">Total Characters: <span class="metric-value">${result.metrics.totalChars}</span></div>`;
+            html += `<div class="metric">Avg Confidence: <span class="metric-value">${result.metrics.avgConfidence}%</span></div>`;
+            html += `<div class="text-preview">${result.metrics.text || 'No text detected'}</div>`;
+            output.innerHTML = html;
+        }
+        
+        // Compare all configurations
+        async function compareAllConfigs() {
+            setStatus('Comparing all configurations...', 'info');
+            document.getElementById('testResults').style.display = 'block';
+            const resultsGrid = document.getElementById('resultsGrid');
+            resultsGrid.innerHTML = '';
+            
+            const canvas = document.getElementById('pdfCanvas');
+            const configs = [
+                'tesseract',
+                'paddle-standard',
+                'paddle-improved',
+                'paddle-pdf',
+                'paddle-document'
+            ];
+            
+            const results = [];
+            let tesseractResult = null;
+            
+            for (const config of configs) {
+                setStatus(`Testing ${config}...`, 'info');
+                const result = await processPage(canvas, config);
+                results.push(result);
+                
+                if (config === 'tesseract') {
+                    tesseractResult = result;
+                }
+                
+                // Create result card
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                let performanceClass = '';
+                if (tesseractResult && config !== 'tesseract') {
+                    const charRatio = result.metrics.totalChars / (tesseractResult.metrics.totalChars || 1);
+                    performanceClass = charRatio > 1.1 ? 'better' : charRatio < 0.9 ? 'worse' : '';
+                }
+                
+                card.innerHTML = `
+                    <h4>${config}</h4>
+                    <div class="metric">Time: <span class="metric-value">${result.processingTime}ms</span></div>
+                    <div class="metric">Regions: <span class="metric-value">${result.metrics.regionCount}</span></div>
+                    <div class="metric">Characters: <span class="metric-value ${performanceClass}">${result.metrics.totalChars}</span></div>
+                    <div class="metric">Confidence: <span class="metric-value">${result.metrics.avgConfidence}%</span></div>
+                `;
+                
+                resultsGrid.appendChild(card);
+            }
+            
+            // Find best performing config
+            const bestConfig = results.reduce((best, current) => 
+                current.metrics.totalChars > best.metrics.totalChars ? current : best
+            );
+            
+            setStatus(`Best configuration: ${bestConfig.config} (${bestConfig.metrics.totalChars} characters detected)`, 'success');
+        }
+        
+        // Event handlers
+        document.getElementById('pdfInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                const fileReader = new FileReader();
+                fileReader.onload = function() {
+                    loadPDF(new Uint8Array(this.result));
+                };
+                fileReader.readAsArrayBuffer(file);
+            }
+        });
+        
+        document.getElementById('loadSamplePdf').addEventListener('click', () => {
+            // Create a sample PDF for testing
+            setStatus('Creating sample PDF...', 'info');
+            // In a real scenario, you would load an actual PDF file
+            // For now, we'll show a message
+            setStatus('Please upload a PDF file to test', 'info');
+        });
+        
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        });
+        
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        });
+        
+        document.getElementById('processPage').addEventListener('click', async () => {
+            const canvas = document.getElementById('pdfCanvas');
+            const result = await processPage(canvas, currentConfig);
+            displayResults(result);
+        });
+        
+        document.getElementById('processAllPages').addEventListener('click', async () => {
+            setStatus('Processing all pages...', 'info');
+            let totalChars = 0;
+            let totalTime = 0;
+            
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                await renderPage(i);
+                const canvas = document.getElementById('pdfCanvas');
+                const result = await processPage(canvas, currentConfig);
+                totalChars += result.metrics.totalChars;
+                totalTime += result.processingTime;
+                setStatus(`Processed page ${i}/${pdfDoc.numPages}`, 'info');
+            }
+            
+            setStatus(`Completed: ${totalChars} characters in ${totalTime}ms`, 'success');
+        });
+        
+        document.getElementById('compareAll').addEventListener('click', compareAllConfigs);
+        
+        // Config selector
+        document.querySelectorAll('.config-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.config-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentConfig = e.target.dataset.config;
+            });
+        });
+        
+        // Set status
+        function setStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', initializeOCR);
+    </script>
+</body>
+</html>
