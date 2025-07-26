@@ -5,11 +5,11 @@
 
 import Tesseract from 'tesseract.js';
 import { PaddleOCR } from './paddle-ocr.js';
-import { improvedPreprocessingUnit } from './preprocessing-unit.js';
-import { applyOptimalConfiguration } from './optimal-ocr-configs.js';
+import { applyOptimalConfig } from './optimal-ocr-configs.js';
 import { PPOCRv5OnnxEngine } from './ppocr-v5-onnx-engine.js';
 import { ocrCache } from './ocr-cache-manager.js';
 import { AdvancedOCROptions } from './onnx-ocr-advanced.js';
+import { DetectionPreprocessor, RecognitionPreprocessor } from './onnx-ocr-preprocessing.js';
 
 // Global engines
 let tesseractWorker = null;
@@ -56,7 +56,7 @@ async function processWithPaddleOCR(file, options, progressCallback) {
     
     // Apply configuration
     if (options.preset && options.preset !== 'custom') {
-        applyOptimalConfiguration(paddle, options.preset);
+        applyOptimalConfig(paddle, options.preset);
     }
     
     // Convert file to canvas
@@ -65,7 +65,10 @@ async function processWithPaddleOCR(file, options, progressCallback) {
     // Apply preprocessing if improved mode
     let processedCanvas = canvas;
     if (options.preprocessing === 'improved') {
-        processedCanvas = await improvedPreprocessingUnit.processImage(canvas);
+        // Use ONNX preprocessing
+        const preprocessor = new DetectionPreprocessor();
+        const preprocessed = await preprocessor.preprocess(canvas);
+        processedCanvas = preprocessed.canvas || canvas;
     }
     
     // Run OCR

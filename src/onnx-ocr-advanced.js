@@ -454,11 +454,4 @@ export class TableExtractor {
     }
 }
 
-// Export all advanced functionalities
-export {
-    MultiLanguageOCREngine,
-    BatchOCRProcessor,
-    AdvancedOCROptions,
-    OCRResultAnalyzer,
-    TableExtractor
-};
+// All classes are already exported above
