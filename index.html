@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PP-OCR Web - Client-Side OCR with ONNX Runtime</title>
-  <script type="module" crossorigin src="/client-ocr-app/assets/index-BJww9yLY.js"></script>
+    <title>Client-Side OCR Web Application</title>
+  <script type="module" crossorigin src="/client-ocr-app/assets/index-BMj3uyOL.js"></script>
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/onnxruntime-CqRzMC93.js">
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/pdfjs-BhC3vFUT.js">
-  <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-BTpUwQvT.css">
+  <link rel="stylesheet" crossorigin href="/client-ocr-app/assets/index-D0j7zsYg.css">
 </head>
 <body>
     <div id="app">
         <header>
-            <h1>🔍 PP-OCR Web</h1>
-            <p>Process images and extract text using PaddleOCR v5 models with ONNX Runtime - 100% client-side!</p>
+            <h1>🔍 Client-Side OCR Web Application</h1>
+            <p>Advanced browser-based OCR with PaddleOCR and Tesseract.js - Extract text from images and PDFs with optimized configurations!</p>
             <div id="status" class="status info">Initializing...</div>
             <p class="advanced-features-note">
                 <small>🔬 Advanced PDF features (table parsing, layout detection, formula recognition) available via 
@@ -56,6 +56,19 @@
                                 <span class="option-desc">Enhanced preprocessing with better text detection</span>
                             </label>
                         </div>
+                    </div>
+                    
+                    <div class="config-selection">
+                        <h4>Configuration Preset</h4>
+                        <select id="configPreset" class="config-select">
+                            <option value="GENERAL_TEXT">General Text (Balanced)</option>
+                            <option value="INFOGRAPHIC_OPTIMIZED">Infographic (Complex Layouts)</option>
+                            <option value="DOCUMENT_OPTIMIZED">Official Documents</option>
+                            <option value="RECEIPT_OPTIMIZED" selected>Receipts (Thermal Print)</option>
+                            <option value="ID_CARD_OPTIMIZED">ID Cards</option>
+                            <option value="PDF_OPTIMIZED">PDFs (Multi-page)</option>
+                        </select>
+                        <p class="config-desc">Pre-tuned configurations optimized for specific document types</p>
                     </div>
                     
                     <div class="infographic-mode">
