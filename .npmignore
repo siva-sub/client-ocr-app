@@ -46,3 +46,19 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary directories
+temp-*/
+temp-onnxocr/
+
+# ONNX Runtime files in root public folder (keep only in assets)
+public/ort*.mjs
+public/ort*.jsep.mjs
+public/ort*.wasm
+public/ort*.jsep.wasm
+
+# Scripts directory (development only)
+scripts/
+
+# Verification scripts
+verify-*.js
