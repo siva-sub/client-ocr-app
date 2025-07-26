@@ -8,10 +8,10 @@
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a1b1e">
     <meta name="description" content="Advanced OCR application with multiple engines and AI-powered text recognition">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     
     <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
     
     <!-- Mantine UI CSS -->
     <style>
@@ -700,8 +700,7 @@
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swPath = window.location.hostname.includes('github.io') ? '/client-ocr-app/sw.js' : '/sw.js';
-                navigator.serviceWorker.register(swPath)
+                navigator.serviceWorker.register('./sw.js')
                     .then(registration => {
                         console.log('Service Worker registered:', registration);
                         
