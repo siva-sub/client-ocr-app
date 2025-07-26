@@ -1,6 +1,7 @@
 import { ppOCRImprovedEngine } from './ppocr-improved-engine.js';
 import { ppOCREngine } from './ppocr-onnx-engine.js';
 import { tesseractOCREngine } from './tesseract-ocr-engine.js';
+import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './infographic-ocr-config.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import './style.css';
 
@@ -12,6 +13,7 @@ let currentImageBlob = null;
 let currentEngine = 'tesseract';  // Default to tesseract for better accuracy
 let currentPreprocessing = 'improved'; // 'standard' or 'improved'
 let currentOCREngine = tesseractOCREngine;
+let infographicMode = false; // Flag for infographic optimization
 
 // Add getter to prevent external modification
 Object.defineProperty(window, 'currentEngine', {
@@ -143,6 +145,9 @@ function setupEventListeners() {
     document.getElementById('detectionModel').addEventListener('change', handleModelChange);
     document.getElementById('recognitionModel').addEventListener('change', handleModelChange);
     document.getElementById('dictionary').addEventListener('change', handleModelChange);
+    
+    // Infographic mode toggle
+    document.getElementById('infographicMode').addEventListener('change', handleInfographicModeChange);
 }
 
 // Handle engine change
@@ -900,6 +905,21 @@ window.selectBox = function(index) {
         }
     }
 };
+
+// Handle infographic mode change
+function handleInfographicModeChange(event) {
+    infographicMode = event.target.checked;
+    console.log('Infographic mode:', infographicMode ? 'enabled' : 'disabled');
+    
+    if (infographicMode && currentEngine === 'paddle') {
+        // Apply optimized configuration for infographics
+        updatePaddleOCRConfig(currentOCREngine);
+        showStatus('Infographic mode enabled - optimized for complex layouts', 'info');
+    } else if (!infographicMode && currentEngine === 'paddle') {
+        // Reset to default configuration
+        showStatus('Infographic mode disabled', 'info');
+    }
+}
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeApp);

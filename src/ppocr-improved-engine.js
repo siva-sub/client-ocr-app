@@ -68,6 +68,8 @@ export class PPOCRImprovedEngine {
             recognition: 'en_PP-OCRv4_mobile_rec_infer.onnx',  // English recognition model
             dictionary: 'en_dict.txt'  // English dictionary
         };
+        // Expose CONFIG for external updates
+        this.CONFIG = CONFIG;
     }
 
     setModelConfig(config) {
@@ -329,8 +331,8 @@ export class PPOCRImprovedEngine {
     async resizeForDetection(imageData) {
         try {
             console.log('resizeForDetection - input image size:', imageData.width, 'x', imageData.height);
-            const limitSideLen = CONFIG.det_limit_side_len;
-            const limitType = CONFIG.det_limit_type;
+            const limitSideLen = this.CONFIG.det_limit_side_len;
+            const limitType = this.CONFIG.det_limit_type;
             let newW = imageData.width;
             let newH = imageData.height;
         
@@ -351,7 +353,7 @@ export class PPOCRImprovedEngine {
         newH = Math.round(newH * ratio);
         
         // Make dimensions divisible by grid size for finer detection
-        const gridSize = CONFIG.grid_size || 32;
+        const gridSize = this.CONFIG.grid_size || 32;
         const targetW = Math.max(gridSize, Math.round(newW / gridSize) * gridSize);
         const targetH = Math.max(gridSize, Math.round(newH / gridSize) * gridSize);
         

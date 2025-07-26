@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Infographic OCR Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        #preview {
+            max-width: 100%;
+            height: auto;
+        }
+        #results {
+            white-space: pre-wrap;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Infographic OCR Test - Optimized for Complex Layouts</h1>
+    
+    <div class="controls">
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="processBtn">Process with Standard Config</button>
+        <button id="processInfographicBtn">Process with Infographic Mode</button>
+    </div>
+    
+    <div id="status" class="status info">Ready to process images</div>
+    
+    <div class="container">
+        <div class="section">
+            <h2>Original Image</h2>
+            <img id="preview" />
+        </div>
+        <div class="section">
+            <h2>OCR Results</h2>
+            <div id="results">No results yet</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ppOCRImprovedEngine } from './src/ppocr-improved-engine.js';
+        import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig, preprocessInfographic } from './src/infographic-ocr-config.js';
+        
+        let currentImage = null;
+        
+        // Initialize OCR engine
+        async function initializeOCR() {
+            setStatus('Initializing OCR engine...', 'info');
+            try {
+                await ppOCRImprovedEngine.initialize((progress) => {
+                    setStatus(progress.message, 'info');
+                });
+                setStatus('OCR engine ready!', 'success');
+            } catch (error) {
+                setStatus('Failed to initialize OCR: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Handle file selection
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentImage = e.target.result;
+                    document.getElementById('preview').src = currentImage;
+                    setStatus('Image loaded. Ready to process.', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Process with standard configuration
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (!currentImage) {
+                setStatus('Please select an image first', 'error');
+                return;
+            }
+            
+            setStatus('Processing with standard configuration...', 'info');
+            const startTime = Date.now();
+            
+            try {
+                // Convert data URL to blob
+                const response = await fetch(currentImage);
+                const blob = await response.blob();
+                
+                // Process with standard config
+                const results = await ppOCRImprovedEngine.process(blob);
+                
+                const elapsed = Date.now() - startTime;
+                displayResults(results, elapsed, 'Standard');
+                setStatus(`Processing complete in ${elapsed}ms`, 'success');
+            } catch (error) {
+                setStatus('Processing failed: ' + error.message, 'error');
+                console.error(error);
+            }
+        });
+        
+        // Process with infographic configuration
+        document.getElementById('processInfographicBtn').addEventListener('click', async () => {
+            if (!currentImage) {
+                setStatus('Please select an image first', 'error');
+                return;
+            }
+            
+            setStatus('Processing with infographic mode...', 'info');
+            const startTime = Date.now();
+            
+            try {
+                // Apply infographic configuration
+                updatePaddleOCRConfig(ppOCRImprovedEngine);
+                
+                // Convert data URL to blob
+                const response = await fetch(currentImage);
+                const blob = await response.blob();
+                
+                // Process with infographic config
+                const results = await ppOCRImprovedEngine.process(blob);
+                
+                const elapsed = Date.now() - startTime;
+                displayResults(results, elapsed, 'Infographic Mode');
+                setStatus(`Processing complete in ${elapsed}ms with infographic optimization`, 'success');
+            } catch (error) {
+                setStatus('Processing failed: ' + error.message, 'error');
+                console.error(error);
+            }
+        });
+        
+        // Display results
+        function displayResults(results, processingTime, mode) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!results || results.length === 0) {
+                resultsDiv.textContent = 'No text detected';
+                return;
+            }
+            
+            let output = `=== ${mode} Results ===\n`;
+            output += `Processing Time: ${processingTime}ms\n`;
+            output += `Text Regions Found: ${results.length}\n\n`;
+            
+            // Group results by position for better readability
+            const sortedResults = [...results].sort((a, b) => {
+                const aY = a.box ? Math.min(...a.box.map(p => p[1])) : 0;
+                const bY = b.box ? Math.min(...b.box.map(p => p[1])) : 0;
+                if (Math.abs(aY - bY) < 20) {
+                    const aX = a.box ? Math.min(...a.box.map(p => p[0])) : 0;
+                    const bX = b.box ? Math.min(...b.box.map(p => p[0])) : 0;
+                    return aX - bX;
+                }
+                return aY - bY;
+            });
+            
+            let currentLine = [];
+            let lastY = -1;
+            
+            sortedResults.forEach((result, index) => {
+                if (result.box) {
+                    const y = Math.min(...result.box.map(p => p[1]));
+                    
+                    // Check if this is a new line
+                    if (lastY !== -1 && Math.abs(y - lastY) > 20) {
+                        // Output current line
+                        if (currentLine.length > 0) {
+                            output += currentLine.join(' ') + '\n';
+                            currentLine = [];
+                        }
+                    }
+                    
+                    currentLine.push(result.text);
+                    lastY = y;
+                } else {
+                    output += `[${index + 1}] ${result.text} (confidence: ${(result.confidence * 100).toFixed(1)}%)\n`;
+                }
+            });
+            
+            // Output last line
+            if (currentLine.length > 0) {
+                output += currentLine.join(' ') + '\n';
+            }
+            
+            output += '\n=== Raw Results ===\n';
+            sortedResults.forEach((result, index) => {
+                output += `[${index + 1}] "${result.text}" (confidence: ${(result.confidence * 100).toFixed(1)}%)\n`;
+            });
+            
+            resultsDiv.textContent = output;
+        }
+        
+        // Set status message
+        function setStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', initializeOCR);
+    </script>
+</body>
+</html>
