@@ -6,33 +6,28 @@
 const CACHE_NAME = 'smart-ocr-v1';
 const RUNTIME_CACHE = 'smart-ocr-runtime-v1';
 
+// Determine if running on GitHub Pages
+const isGitHubPages = self.location.hostname.includes('github.io');
+const basePath = isGitHubPages ? '/client-ocr-app' : '';
+
 // Files to cache for offline use
 const STATIC_CACHE_URLS = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-    '/src/main-mantine.js',
-    '/src/ocr-cache-manager.js',
-    '/src/ppocr-v5-onnx-engine.js',
-    '/src/onnx-ocr-preprocessing.js',
-    '/src/onnx-ocr-postprocessing.js',
-    '/src/onnx-ocr-advanced.js',
-    '/src/optimal-ocr-configs.js',
-    '/src/paddle-ocr.js',
-    '/src/ocr-utils.js'
-    // Icons will be cached on-demand
+    `${basePath}/`,
+    `${basePath}/index.html`,
+    `${basePath}/manifest.json`
+    // Other resources will be cached on-demand
 ];
 
 // Model files to cache (large files, cached on demand)
 const MODEL_CACHE_URLS = [
-    '/public/models/PP-OCRv5/det/det.onnx',
-    '/public/models/PP-OCRv5/cls/cls.onnx',
-    '/public/models/PP-OCRv5/rec/rec.onnx',
-    '/public/models/PP-OCRv5/ppocrv5_dict.txt',
-    '/public/models/PP-OCRv4/det/det.onnx',
-    '/public/models/PP-OCRv4/cls/cls.onnx',
-    '/public/models/PP-OCRv4/rec/rec.onnx',
-    '/public/models/PP-OCRv4/ppocr_keys_v1.txt'
+    `${basePath}/models/PP-OCRv5/det/det.onnx`,
+    `${basePath}/models/PP-OCRv5/cls/cls.onnx`,
+    `${basePath}/models/PP-OCRv5/rec/rec.onnx`,
+    `${basePath}/models/PP-OCRv5/ppocrv5_dict.txt`,
+    `${basePath}/models/PP-OCRv4/det/det.onnx`,
+    `${basePath}/models/PP-OCRv4/cls/cls.onnx`,
+    `${basePath}/models/PP-OCRv4/rec/rec.onnx`,
+    `${basePath}/models/PP-OCRv4/ppocr_keys_v1.txt`
 ];
 
 // Install event - cache static assets
