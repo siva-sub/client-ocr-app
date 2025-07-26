@@ -1,0 +1,132 @@
+{
+  "name": "Smart OCR - AI-Powered Text Recognition",
+  "short_name": "Smart OCR",
+  "description": "Advanced OCR application with multiple engines including PP-OCRv5, Tesseract, and AI-powered text recognition",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1a1b1e",
+  "theme_color": "#228be6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshots/desktop-1.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of Smart OCR"
+    },
+    {
+      "src": "./screenshots/mobile-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile view of Smart OCR"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "scope": "./",
+  "shortcuts": [
+    {
+      "name": "Upload Image",
+      "short_name": "Upload",
+      "description": "Upload an image for OCR processing",
+      "url": "./?action=upload",
+      "icons": [
+        {
+          "src": "./icons/upload-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Camera Capture",
+      "short_name": "Camera",
+      "description": "Capture image from camera for OCR",
+      "url": "./?action=camera",
+      "icons": [
+        {
+          "src": "./icons/camera-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "image",
+          "accept": ["image/*", "application/pdf"]
+        }
+      ]
+    }
+  },
+  "features": [
+    "Cross Platform",
+    "Offline Capable",
+    "Multiple OCR Engines",
+    "PP-OCRv5 Support",
+    "PDF Processing",
+    "Batch Processing",
+    "Cache Support"
+  ]
+}

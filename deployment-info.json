@@ -1,0 +1,11 @@
+{
+  "version": "3.0.0",
+  "buildDate": "2025-07-26T13:15:42Z",
+  "features": [
+    "Visual bounding box display",
+    "Mantine UI design system",
+    "PaddleOCR ONNX models",
+    "Tesseract.js support",
+    "Interactive results viewer"
+  ]
+}

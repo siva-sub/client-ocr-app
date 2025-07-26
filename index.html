@@ -3,1014 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart OCR - AI-Powered Text Recognition</title>
+    <title>OnnxOCR - Browser-Based Text Recognition</title>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a1b1e">
-    <meta name="description" content="Advanced OCR application with multiple engines and AI-powered text recognition">
+    <meta name="description" content="Advanced OCR application using ONNX models with PaddleOCR and Tesseract.js">
     <link rel="manifest" href="./manifest.json">
     
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
     
-    <!-- Mantine UI CSS -->
-    <style>
-        /* CSS Variables for Mantine-like styling */
-        :root {
-            --mantine-color-body: #1a1b1e;
-            --mantine-color-dark-7: #1a1b1e;
-            --mantine-color-dark-6: #25262b;
-            --mantine-color-dark-5: #2c2e33;
-            --mantine-color-dark-4: #373a40;
-            --mantine-color-dark-3: #495057;
-            --mantine-color-dark-2: #6c757d;
-            --mantine-color-dark-1: #adb5bd;
-            --mantine-color-dark-0: #ced4da;
-            --mantine-color-blue-6: #228be6;
-            --mantine-color-blue-7: #1c7ed6;
-            --mantine-color-blue-light: #4dabf7;
-            --mantine-radius-md: 8px;
-            --mantine-radius-lg: 16px;
-            --mantine-spacing-xs: 0.625rem;
-            --mantine-spacing-sm: 0.75rem;
-            --mantine-spacing-md: 1rem;
-            --mantine-spacing-lg: 1.25rem;
-            --mantine-spacing-xl: 1.5rem;
-            --mantine-transition: all 200ms ease;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--mantine-color-body);
-            color: var(--mantine-color-dark-0);
-            line-height: 1.55;
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* App Shell */
-        .app-shell {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        .header {
-            background-color: var(--mantine-color-dark-6);
-            padding: var(--mantine-spacing-md) var(--mantine-spacing-xl);
-            border-bottom: 1px solid var(--mantine-color-dark-4);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: var(--mantine-spacing-sm);
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: white;
-        }
-
-        .logo svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: var(--mantine-spacing-xl);
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        /* Paper Component */
-        .paper {
-            background-color: var(--mantine-color-dark-6);
-            border-radius: var(--mantine-radius-md);
-            padding: var(--mantine-spacing-lg);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            margin-bottom: var(--mantine-spacing-lg);
-        }
-
-        /* Dropzone */
-        .dropzone {
-            border: 2px dashed var(--mantine-color-dark-3);
-            border-radius: var(--mantine-radius-md);
-            padding: var(--mantine-spacing-xl) var(--mantine-spacing-lg);
-            text-align: center;
-            cursor: pointer;
-            transition: var(--mantine-transition);
-            background-color: var(--mantine-color-dark-5);
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .dropzone:hover {
-            border-color: var(--mantine-color-blue-6);
-            background-color: rgba(34, 139, 230, 0.05);
-        }
-
-        .dropzone.active {
-            border-color: var(--mantine-color-blue-6);
-            background-color: rgba(34, 139, 230, 0.1);
-        }
-
-        .dropzone-icon {
-            width: 50px;
-            height: 50px;
-            margin-bottom: var(--mantine-spacing-md);
-            opacity: 0.6;
-        }
-
-        .dropzone-text {
-            font-size: 1.125rem;
-            margin-bottom: var(--mantine-spacing-xs);
-        }
-
-        .dropzone-hint {
-            font-size: 0.875rem;
-            color: var(--mantine-color-dark-2);
-        }
-
-        /* Buttons */
-        .button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 var(--mantine-spacing-lg);
-            height: 42px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: var(--mantine-radius-md);
-            border: none;
-            cursor: pointer;
-            transition: var(--mantine-transition);
-            text-decoration: none;
-            gap: var(--mantine-spacing-xs);
-        }
-
-        .button-primary {
-            background-color: var(--mantine-color-blue-6);
-            color: white;
-        }
-
-        .button-primary:hover {
-            background-color: var(--mantine-color-blue-7);
-        }
-
-        .button-subtle {
-            background-color: transparent;
-            color: var(--mantine-color-dark-0);
-        }
-
-        .button-subtle:hover {
-            background-color: var(--mantine-color-dark-5);
-        }
-
-        .button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        /* Select */
-        .select {
-            width: 100%;
-            padding: 0 var(--mantine-spacing-md);
-            height: 42px;
-            background-color: var(--mantine-color-dark-5);
-            border: 1px solid var(--mantine-color-dark-4);
-            border-radius: var(--mantine-radius-md);
-            color: var(--mantine-color-dark-0);
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: var(--mantine-transition);
-        }
-
-        .select:hover {
-            border-color: var(--mantine-color-dark-3);
-        }
-
-        .select:focus {
-            outline: none;
-            border-color: var(--mantine-color-blue-6);
-        }
-
-        /* Grid System */
-        .grid {
-            display: grid;
-            gap: var(--mantine-spacing-lg);
-        }
-
-        .grid-cols-1 {
-            grid-template-columns: 1fr;
-        }
-
-        .grid-cols-2 {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        @media (max-width: 768px) {
-            .grid-cols-2 {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Progress Bar */
-        .progress {
-            width: 100%;
-            height: 8px;
-            background-color: var(--mantine-color-dark-4);
-            border-radius: var(--mantine-radius-md);
-            overflow: hidden;
-            margin-bottom: var(--mantine-spacing-xs);
-        }
-
-        .progress-bar {
-            height: 100%;
-            background-color: var(--mantine-color-blue-6);
-            transition: width 300ms ease;
-        }
-
-        .progress-label {
-            font-size: 0.75rem;
-            color: var(--mantine-color-dark-2);
-            margin-bottom: var(--mantine-spacing-sm);
-        }
-
-        /* Results Container */
-        .results-container {
-            display: none;
-        }
-
-        .result-item {
-            background-color: var(--mantine-color-dark-5);
-            border-radius: var(--mantine-radius-md);
-            padding: var(--mantine-spacing-md);
-            margin-bottom: var(--mantine-spacing-md);
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--mantine-spacing-sm);
-        }
-
-        .result-filename {
-            font-weight: 600;
-            color: var(--mantine-color-blue-light);
-        }
-
-        .result-text {
-            background-color: var(--mantine-color-dark-7);
-            border-radius: var(--mantine-radius-md);
-            padding: var(--mantine-spacing-md);
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        /* Tabs */
-        .tabs {
-            margin-bottom: var(--mantine-spacing-lg);
-        }
-
-        .tabs-list {
-            display: flex;
-            gap: var(--mantine-spacing-xs);
-            border-bottom: 2px solid var(--mantine-color-dark-4);
-            margin-bottom: var(--mantine-spacing-lg);
-        }
-
-        .tab {
-            padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
-            background: none;
-            border: none;
-            color: var(--mantine-color-dark-1);
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--mantine-transition);
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-        }
-
-        .tab:hover {
-            color: var(--mantine-color-dark-0);
-        }
-
-        .tab.active {
-            color: var(--mantine-color-blue-6);
-            border-bottom-color: var(--mantine-color-blue-6);
-        }
-
-        /* Settings Panel */
-        .settings-group {
-            margin-bottom: var(--mantine-spacing-lg);
-        }
-
-        .settings-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: var(--mantine-spacing-xs);
-            color: var(--mantine-color-dark-1);
-        }
-
-        /* Switch */
-        .switch {
-            display: flex;
-            align-items: center;
-            gap: var(--mantine-spacing-sm);
-            cursor: pointer;
-        }
-
-        .switch-input {
-            position: relative;
-            width: 40px;
-            height: 20px;
-            background-color: var(--mantine-color-dark-4);
-            border-radius: 20px;
-            transition: var(--mantine-transition);
-        }
-
-        .switch-input::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 16px;
-            height: 16px;
-            background-color: white;
-            border-radius: 50%;
-            transition: var(--mantine-transition);
-        }
-
-        .switch input:checked + .switch-input {
-            background-color: var(--mantine-color-blue-6);
-        }
-
-        .switch input:checked + .switch-input::after {
-            left: 22px;
-        }
-
-        .switch input {
-            display: none;
-        }
-
-        /* Image Preview */
-        .image-preview {
-            position: relative;
-            max-width: 100%;
-            margin-bottom: var(--mantine-spacing-lg);
-        }
-
-        .image-preview img {
-            width: 100%;
-            border-radius: var(--mantine-radius-md);
-        }
-
-        .image-preview canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        /* File List */
-        .file-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--mantine-spacing-xs);
-        }
-
-        .file-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--mantine-spacing-sm);
-            background-color: var(--mantine-color-dark-5);
-            border-radius: var(--mantine-radius-md);
-        }
-
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: var(--mantine-spacing-sm);
-        }
-
-        .file-icon {
-            width: 20px;
-            height: 20px;
-            opacity: 0.6;
-        }
-
-        .file-name {
-            font-size: 0.875rem;
-        }
-
-        .file-size {
-            font-size: 0.75rem;
-            color: var(--mantine-color-dark-2);
-        }
-
-        /* Notifications */
-        .notification {
-            position: fixed;
-            bottom: var(--mantine-spacing-lg);
-            right: var(--mantine-spacing-lg);
-            background-color: var(--mantine-color-dark-6);
-            border-radius: var(--mantine-radius-md);
-            padding: var(--mantine-spacing-md);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            gap: var(--mantine-spacing-sm);
-            min-width: 300px;
-            animation: slideIn 300ms ease;
-            z-index: 1000;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .notification-success {
-            border-left: 3px solid #40c057;
-        }
-
-        .notification-error {
-            border-left: 3px solid #fa5252;
-        }
-
-        .notification-info {
-            border-left: 3px solid #339af0;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: var(--mantine-spacing-md);
-            }
-
-            .header {
-                padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
-            }
-
-            .notification {
-                left: var(--mantine-spacing-md);
-                right: var(--mantine-spacing-md);
-                bottom: var(--mantine-spacing-md);
-            }
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--mantine-color-dark-3);
-            border-top-color: var(--mantine-color-blue-6);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Hidden */
-        .hidden {
-            display: none !important;
-        }
-    </style>
+    <!-- Mantine-style CSS -->
+    <link rel="stylesheet" href="./src/style-mantine.css">
 </head>
 <body>
-    <div class="app-shell">
+    <div class="mantine-AppShell">
         <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 11H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zM20 11h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zM9 22H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zM20 22h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1z"/>
-                    </svg>
-                    Smart OCR
-                </div>
-                <div class="header-actions">
-                    <button class="button button-subtle" id="settingsBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+        <header class="mantine-Header">
+            <div class="mantine-Container">
+                <div class="mantine-Group">
+                    <div class="mantine-Logo">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="6" y="4" width="12" height="16" rx="2"/>
+                            <line x1="9" y1="9" x2="15" y2="9"/>
+                            <line x1="9" y1="13" x2="15" y2="13"/>
                         </svg>
-                        Settings
-                    </button>
+                        <span>OnnxOCR</span>
+                    </div>
+                    <nav class="mantine-Navbar">
+                        <a href="#" class="mantine-NavLink active">Demo</a>
+                        <a href="https://github.com/jingsongliujing/OnnxOCR" class="mantine-NavLink" target="_blank">Documentation</a>
+                        <a href="https://github.com/siva-sub/client-ocr-app" class="mantine-NavLink" target="_blank">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </nav>
                 </div>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="main-content">
-            <!-- Upload Section -->
-            <div class="paper">
-                <div class="tabs">
-                    <div class="tabs-list">
-                        <button class="tab active" data-tab="upload">Upload</button>
-                        <button class="tab" data-tab="camera">Camera</button>
-                        <button class="tab" data-tab="url">URL</button>
-                    </div>
-                    
-                    <div class="tab-content" data-content="upload">
-                        <div class="dropzone" id="dropzone">
-                            <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            <div class="dropzone-text">Drop files here or click to upload</div>
-                            <div class="dropzone-hint">Support for images, PDFs, and documents</div>
+        <main class="mantine-Main">
+            <div class="mantine-Container">
+                <!-- Title Section -->
+                <div class="mantine-Title-section">
+                    <h1 class="mantine-Title">Browser-Based OCR with ONNX Models</h1>
+                    <p class="mantine-Text">
+                        Using PaddleOCR models converted to ONNX format for high-performance text recognition directly in your browser.
+                        No server required - all processing happens locally.
+                    </p>
+                </div>
+
+                <!-- Input Section -->
+                <div class="mantine-Paper">
+                    <div class="mantine-Stack">
+                        <h2 class="mantine-Title-sm">Upload Image</h2>
+                        
+                        <div class="mantine-Dropzone" id="dropzone">
+                            <div class="mantine-Dropzone-inner">
+                                <svg class="mantine-Dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                </svg>
+                                <div class="mantine-Text-lg">Drag images here or click to select</div>
+                                <div class="mantine-Text-sm mantine-dimmed">Attach as many files as you like, each file should not exceed 5mb</div>
+                            </div>
                             <input type="file" id="fileInput" multiple accept="image/*,.pdf" style="display: none;">
                         </div>
-                    </div>
 
-                    <div class="tab-content hidden" data-content="camera">
-                        <div style="text-align: center; padding: var(--mantine-spacing-xl);">
-                            <button class="button button-primary" id="cameraBtn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                    <circle cx="12" cy="13" r="4"/>
-                                </svg>
-                                Open Camera
-                            </button>
+                        <!-- File List -->
+                        <div class="mantine-FileList" id="fileList" style="display: none;">
+                            <h3 class="mantine-Text-sm mantine-dimmed">Selected Files</h3>
+                            <div id="fileListContent"></div>
                         </div>
-                    </div>
 
-                    <div class="tab-content hidden" data-content="url">
-                        <div style="display: flex; gap: var(--mantine-spacing-sm);">
-                            <input type="url" class="select" style="flex: 1;" placeholder="Enter image URL" id="urlInput">
-                            <button class="button button-primary" id="fetchUrlBtn">Fetch</button>
+                        <!-- Settings -->
+                        <div class="mantine-Grid">
+                            <div class="mantine-Col">
+                                <label class="mantine-InputWrapper">
+                                    <div class="mantine-InputLabel">OCR Engine</div>
+                                    <select class="mantine-Select" id="engineSelect">
+                                        <option value="paddleocr" selected>PaddleOCR (ONNX)</option>
+                                        <option value="tesseract">Tesseract.js</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="mantine-Col" id="modelSelectWrapper">
+                                <label class="mantine-InputWrapper">
+                                    <div class="mantine-InputLabel">Model Version</div>
+                                    <select class="mantine-Select" id="modelSelect">
+                                        <option value="PP-OCRv5" selected>PP-OCRv5 (Latest)</option>
+                                        <option value="PP-OCRv4">PP-OCRv4</option>
+                                    </select>
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- File List -->
-                <div class="file-list hidden" id="fileList"></div>
-            </div>
-
-            <!-- Settings Section -->
-            <div class="paper">
-                <div class="grid grid-cols-2">
-                    <div class="settings-group">
-                        <div class="settings-label">OCR Engine</div>
-                        <select class="select" id="engineSelect">
-                            <option value="tesseract">Tesseract OCR</option>
-                            <option value="paddleocr" selected>PaddleOCR</option>
-                            <option value="ppocr-v5">PP-OCRv5 Enhanced</option>
-                        </select>
-                    </div>
-                    
-                    <div class="settings-group">
-                        <div class="settings-label">Model Version</div>
-                        <select class="select" id="modelSelect">
-                            <optgroup label="Server Models (Higher Accuracy)">
-                                <option value="PP-OCRv5" selected>PP-OCRv5 (Latest)</option>
-                                <option value="PP-OCRv4">PP-OCRv4</option>
-                                <option value="ch_ppocr_server_v2.0">Server v2.0</option>
-                            </optgroup>
-                            <optgroup label="Mobile Models (Faster)">
-                                <option value="PP-OCRv5_mobile">PP-OCRv5 Mobile</option>
-                                <option value="PP-OCRv4_mobile">PP-OCRv4 Mobile</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="settings-group">
-                    <div class="settings-label">Preset Configuration</div>
-                    <select class="select" id="presetSelect">
-                        <option value="balanced" selected>Balanced (Default)</option>
-                        <option value="high_accuracy">High Accuracy</option>
-                        <option value="fast_processing">Fast Processing</option>
-                        <option value="handwritten">Handwritten Text</option>
-                        <option value="low_quality">Low Quality Images</option>
-                        <option value="custom">Custom Settings</option>
-                    </select>
-                </div>
-
-                <div class="settings-group">
-                    <label class="switch">
-                        <input type="checkbox" id="angleClassification" checked>
-                        <span class="switch-input"></span>
-                        <span>Enable Angle Classification</span>
-                    </label>
-                </div>
-
-                <div class="settings-group">
-                    <label class="switch">
-                        <input type="checkbox" id="cacheResults" checked>
-                        <span class="switch-input"></span>
-                        <span>Cache Results</span>
-                    </label>
-                </div>
-
-                <button class="button button-primary" id="processBtn" style="width: 100%;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 11 12 14 22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                    Process Images
-                </button>
-                
-                <!-- Model Info Display -->
-                <div class="settings-group" id="modelInfoSection" style="display: none; margin-top: var(--mantine-spacing-lg); padding: var(--mantine-spacing-md); background-color: var(--mantine-color-dark-5); border-radius: var(--mantine-radius-md);">
-                    <div class="settings-label" style="color: var(--mantine-color-blue-light); margin-bottom: var(--mantine-spacing-sm);">Selected Models</div>
-                    <div style="font-size: 0.75rem; color: var(--mantine-color-dark-1); font-family: monospace;">
-                        <div>DET: <span id="selectedDET" style="color: var(--mantine-color-dark-0);">-</span></div>
-                        <div>CLS: <span id="selectedCLS" style="color: var(--mantine-color-dark-0);">-</span></div>
-                        <div>REC: <span id="selectedREC" style="color: var(--mantine-color-dark-0);">-</span></div>
-                        <div>DICT: <span id="selectedDICT" style="color: var(--mantine-color-dark-0);">-</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progress Section -->
-            <div class="paper hidden" id="progressSection">
-                <div class="progress-label" id="progressLabel">Processing...</div>
-                <div class="progress">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-            </div>
-
-            <!-- Results Section -->
-            <div class="results-container" id="resultsContainer">
-                <div class="paper">
-                    <div class="result-header">
-                        <h2>OCR Results</h2>
-                        <button class="button button-primary" id="downloadAllBtn">
-                            Download All
+                        <!-- Process Button -->
+                        <button class="mantine-Button mantine-Button-filled" id="processBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12h4l3 9 4-18 3 9h4"/>
+                            </svg>
+                            Run OCR Recognition
                         </button>
                     </div>
-                    <div id="resultsList"></div>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="mantine-Paper" id="progressSection" style="display: none;">
+                    <div class="mantine-Stack">
+                        <div class="mantine-Text-sm" id="progressText">Initializing models...</div>
+                        <div class="mantine-Progress">
+                            <div class="mantine-Progress-bar" id="progressBar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" style="display: none;">
+                    <!-- Visual Results (PaddleOCR style) -->
+                    <div class="mantine-Paper" id="visualResults" style="display: none;">
+                        <div class="mantine-Stack">
+                            <h2 class="mantine-Title-sm">Detection Results</h2>
+                            
+                            <div class="mantine-Tabs">
+                                <div class="mantine-Tabs-list">
+                                    <button class="mantine-Tab active" data-tab="visual">Visual</button>
+                                    <button class="mantine-Tab" data-tab="text">Text Only</button>
+                                    <button class="mantine-Tab" data-tab="json">JSON</button>
+                                </div>
+                                
+                                <div class="mantine-Tabs-panel active" data-panel="visual">
+                                    <div class="ocr-visual-container">
+                                        <div class="ocr-canvas-wrapper">
+                                            <canvas id="ocrCanvas"></canvas>
+                                            <div class="ocr-boxes" id="ocrBoxes"></div>
+                                        </div>
+                                        <div class="ocr-detections">
+                                            <h3 class="mantine-Text-sm mantine-dimmed">Detected Text Regions</h3>
+                                            <div class="ocr-detection-list" id="detectionList"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mantine-Tabs-panel" data-panel="text">
+                                    <pre class="mantine-Code" id="textResult"></pre>
+                                </div>
+                                
+                                <div class="mantine-Tabs-panel" data-panel="json">
+                                    <pre class="mantine-Code" id="jsonResult"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Standard Results (Tesseract style) -->
+                    <div class="mantine-Paper" id="standardResults" style="display: none;">
+                        <div class="mantine-Stack">
+                            <h2 class="mantine-Title-sm">OCR Results</h2>
+                            <pre class="mantine-Code" id="standardTextResult"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Info -->
+                <div class="mantine-Paper mantine-dimmed" style="margin-top: 2rem;">
+                    <div class="mantine-Stack spacing-xs">
+                        <h3 class="mantine-Text-sm">Model Information</h3>
+                        <div class="mantine-Code" style="font-size: 0.75rem;">
+                            <div>Detection Model: <span id="detModel">-</span></div>
+                            <div>Classification Model: <span id="clsModel">-</span></div>
+                            <div>Recognition Model: <span id="recModel">-</span></div>
+                            <div>Dictionary: <span id="dictModel">-</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
+
+        <!-- Footer -->
+        <footer class="mantine-Footer">
+            <div class="mantine-Container">
+                <div class="mantine-Group">
+                    <div class="mantine-Text-sm mantine-dimmed">
+                        Based on <a href="https://github.com/jingsongliujing/OnnxOCR" target="_blank">OnnxOCR</a> • 
+                        Models from <a href="https://github.com/PaddlePaddle/PaddleOCR" target="_blank">PaddleOCR</a>
+                    </div>
+                    <div class="mantine-Text-sm mantine-dimmed">
+                        <a href="https://www.npmjs.com/package/client-ocr-app" target="_blank">npm package</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
-    <!-- Scripts -->
-    <script type="module">
-        import { ocrCache } from './src/ocr-cache-manager.js';
-        import { PPOCRv5OnnxEngine } from './src/ppocr-v5-onnx-engine.js';
-        import { AdvancedOCROptions } from './src/onnx-ocr-advanced.js';
-        import './src/main-mantine.js';
-        
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration);
-                        
-                        // Check for updates
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showNotification('New version available! Reload to update.', 'info');
-                                }
-                            });
-                        });
-                    })
-                    .catch(err => console.error('Service Worker registration failed:', err));
-            });
-        }
-        
-        // UI Elements
-        const dropzone = document.getElementById('dropzone');
-        const fileInput = document.getElementById('fileInput');
-        const fileList = document.getElementById('fileList');
-        const processBtn = document.getElementById('processBtn');
-        const progressSection = document.getElementById('progressSection');
-        const progressBar = document.getElementById('progressBar');
-        const progressLabel = document.getElementById('progressLabel');
-        const resultsContainer = document.getElementById('resultsContainer');
-        const resultsList = document.getElementById('resultsList');
-        
-        let selectedFiles = [];
-        let currentEngine = null;
-        
-        // Tab functionality
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                
-                // Update active tab
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Show corresponding content
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.toggle('hidden', content.dataset.content !== tabName);
-                });
-            });
-        });
-        
-        // Dropzone functionality
-        dropzone.addEventListener('click', () => fileInput.click());
-        
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('active');
-        });
-        
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.classList.remove('active');
-        });
-        
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('active');
-            handleFiles(e.dataTransfer.files);
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
-        
-        function handleFiles(files) {
-            selectedFiles = Array.from(files);
-            updateFileList();
-        }
-        
-        function updateFileList() {
-            if (selectedFiles.length === 0) {
-                fileList.classList.add('hidden');
-                return;
-            }
-            
-            fileList.classList.remove('hidden');
-            fileList.innerHTML = selectedFiles.map((file, index) => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                        <div>
-                            <div class="file-name">${file.name}</div>
-                            <div class="file-size">${formatFileSize(file.size)}</div>
-                        </div>
-                    </div>
-                    <button class="button button-subtle" onclick="removeFile(${index})">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-            `).join('');
-        }
-        
-        window.removeFile = function(index) {
-            selectedFiles.splice(index, 1);
-            updateFileList();
-        };
-        
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // Process button
-        processBtn.addEventListener('click', async () => {
-            if (selectedFiles.length === 0) {
-                showNotification('Please select files to process', 'error');
-                return;
-            }
-            
-            const engineType = document.getElementById('engineSelect').value;
-            const modelVersion = document.getElementById('modelSelect').value;
-            const presetName = document.getElementById('presetSelect').value;
-            const useAngleCls = document.getElementById('angleClassification').checked;
-            const useCache = document.getElementById('cacheResults').checked;
-            
-            progressSection.classList.remove('hidden');
-            resultsContainer.style.display = 'none';
-            resultsList.innerHTML = '';
-            
-            const results = [];
-            
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const file = selectedFiles[i];
-                updateProgress((i / selectedFiles.length) * 100, `Processing ${file.name}...`);
-                
-                try {
-                    // Check cache first
-                    let result = null;
-                    if (useCache) {
-                        const fileData = await fileToBase64(file);
-                        result = ocrCache.get(fileData, engineType, modelVersion);
-                    }
-                    
-                    if (!result) {
-                        // Process the file based on engine type
-                        if (engineType === 'tesseract') {
-                            result = await window.OCREngine.processWithTesseract(file, (msg) => {
-                                updateProgress((i / selectedFiles.length) * 100, msg);
-                            });
-                        } else if (engineType === 'paddleocr') {
-                            const options = {
-                                preset: presetName,
-                                preprocessing: 'improved',
-                                modelVersion: modelVersion
-                            };
-                            result = await window.OCREngine.processWithPaddleOCR(file, options, (msg) => {
-                                updateProgress((i / selectedFiles.length) * 100, msg);
-                                
-                                // Update model info display
-                                if (msg.phase === 'model_selection' && msg.models) {
-                                    updateModelInfo(msg.models);
-                                }
-                            });
-                        } else if (engineType === 'ppocr-v5') {
-                            // Get preset options
-                            const options = presetName !== 'custom' 
-                                ? AdvancedOCROptions.mergeWithPreset(presetName, { 
-                                    modelName: modelVersion,
-                                    useAngleCls: useAngleCls,
-                                    useCache: useCache
-                                })
-                                : {
-                                    modelName: modelVersion,
-                                    useAngleCls: useAngleCls,
-                                    useCache: useCache
-                                };
-                            
-                            if (!currentEngine || currentEngine.modelName !== modelVersion) {
-                                currentEngine = new PPOCRv5OnnxEngine(options);
-                                await currentEngine.initialize((msg) => {
-                                    updateProgress((i / selectedFiles.length) * 100, msg);
-                                    
-                                    // Update model info display
-                                    if (msg.phase === 'model_selection' && msg.models) {
-                                        updateModelInfo(msg.models);
-                                    }
-                                });
-                            }
-                            
-                            result = await currentEngine.process(file, (msg) => {
-                                updateProgress((i / selectedFiles.length) * 100, msg);
-                            });
-                        }
-                        
-                        // Cache the result
-                        if (useCache && result) {
-                            const fileData = await fileToBase64(file);
-                            ocrCache.set(fileData, engineType, modelVersion, result);
-                        }
-                    }
-                    
-                    results.push({
-                        filename: file.name,
-                        text: result?.text || 'No text detected',
-                        boxes: result?.boxes || []
-                    });
-                } catch (error) {
-                    console.error('Error processing file:', error);
-                    results.push({
-                        filename: file.name,
-                        text: `Error: ${error.message}`,
-                        boxes: []
-                    });
-                }
-            }
-            
-            updateProgress(100, 'Processing complete!');
-            displayResults(results);
-            
-            setTimeout(() => {
-                progressSection.classList.add('hidden');
-            }, 1000);
-        });
-        
-        function updateProgress(percent, label) {
-            progressBar.style.width = percent + '%';
-            progressLabel.textContent = label;
-        }
-        
-        function displayResults(results) {
-            resultsContainer.style.display = 'block';
-            resultsList.innerHTML = results.map((result, index) => `
-                <div class="result-item">
-                    <div class="result-header">
-                        <span class="result-filename">${result.filename}</span>
-                        <button class="button button-subtle" onclick="copyText(${index})">
-                            Copy Text
-                        </button>
-                    </div>
-                    <div class="result-text">${result.text}</div>
-                </div>
-            `).join('');
-            
-            window.results = results;
-        }
-        
-        window.copyText = function(index) {
-            const text = window.results[index].text;
-            navigator.clipboard.writeText(text).then(() => {
-                showNotification('Text copied to clipboard', 'success');
-            });
-        };
-        
-        function updateModelInfo(models) {
-            if (models) {
-                document.getElementById('modelInfoSection').style.display = 'block';
-                document.getElementById('selectedDET').textContent = models.det || '-';
-                document.getElementById('selectedCLS').textContent = models.cls || '-';
-                document.getElementById('selectedREC').textContent = models.rec || '-';
-                document.getElementById('selectedDICT').textContent = models.dict || '-';
-            }
-        }
-        
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    ${type === 'success' 
-                        ? '<polyline points="20 6 9 17 4 12"/>' 
-                        : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'}
-                </svg>
-                <span>${message}</span>
-            `;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-        
-        async function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-        
-        // Download all results
-        document.getElementById('downloadAllBtn').addEventListener('click', () => {
-            if (!window.results || window.results.length === 0) return;
-            
-            const allText = window.results.map(r => `=== ${r.filename} ===\n\n${r.text}\n\n`).join('\n');
-            const blob = new Blob([allText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'ocr-results.txt';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-        
-        // Initialize
-        showNotification('Smart OCR ready!', 'success');
-    </script>
+    <!-- Load dependencies -->
+    <script src="https://docs.opencv.org/4.5.0/opencv.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js"></script>
+    
+    <!-- Main application -->
+    <script type="module" src="./src/main.js"></script>
 </body>
 </html>
