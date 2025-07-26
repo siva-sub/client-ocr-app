@@ -11,7 +11,7 @@
     <link rel="manifest" href="/client-ocr-app/manifest.json">
     
     <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/client-ocr-app/icons/icon-192.png">
     
     <!-- Mantine UI CSS -->
     <style>
@@ -519,7 +519,7 @@
             display: none !important;
         }
     </style>
-  <script type="module" crossorigin src="/client-ocr-app/assets/index-7Xdv9re6.js"></script>
+  <script type="module" crossorigin src="/client-ocr-app/assets/index-BNA2nTZx.js"></script>
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/pdfjs-CRNIONdy.js">
   <link rel="modulepreload" crossorigin href="/client-ocr-app/assets/onnxruntime-CqRzMC93.js">
 </head>
@@ -657,6 +657,17 @@
                     </svg>
                     Process Images
                 </button>
+                
+                <!-- Model Info Display -->
+                <div class="settings-group" id="modelInfoSection" style="display: none; margin-top: var(--mantine-spacing-lg); padding: var(--mantine-spacing-md); background-color: var(--mantine-color-dark-5); border-radius: var(--mantine-radius-md);">
+                    <div class="settings-label" style="color: var(--mantine-color-blue-light); margin-bottom: var(--mantine-spacing-sm);">Selected Models</div>
+                    <div style="font-size: 0.75rem; color: var(--mantine-color-dark-1); font-family: monospace;">
+                        <div>DET: <span id="selectedDET" style="color: var(--mantine-color-dark-0);">-</span></div>
+                        <div>CLS: <span id="selectedCLS" style="color: var(--mantine-color-dark-0);">-</span></div>
+                        <div>REC: <span id="selectedREC" style="color: var(--mantine-color-dark-0);">-</span></div>
+                        <div>DICT: <span id="selectedDICT" style="color: var(--mantine-color-dark-0);">-</span></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Progress Section -->

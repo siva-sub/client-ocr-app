@@ -10,21 +10,17 @@ const RUNTIME_CACHE = 'smart-ocr-runtime-v1';
 const STATIC_CACHE_URLS = [
     '/',
     '/index.html',
-    '/index-mantine.html',
     '/manifest.json',
-    '/src/main.js',
-    '/src/style.css',
-    '/src/style-modern.css',
+    '/src/main-mantine.js',
     '/src/ocr-cache-manager.js',
     '/src/ppocr-v5-onnx-engine.js',
-    '/src/ppocr-v5-enhanced-engine.js',
     '/src/onnx-ocr-preprocessing.js',
     '/src/onnx-ocr-postprocessing.js',
-    '/src/tesseract-ocr-engine.js',
-    '/public/assets/ort-wasm-simd-threaded.mjs',
-    '/public/assets/ort-wasm-simd-threaded.wasm',
-    '/public/assets/ort-wasm-simd-threaded.jsep.mjs',
-    '/public/assets/ort-wasm-simd-threaded.jsep.wasm'
+    '/src/onnx-ocr-advanced.js',
+    '/src/optimal-ocr-configs.js',
+    '/src/paddle-ocr.js',
+    '/src/ocr-utils.js'
+    // Icons will be cached on-demand
 ];
 
 // Model files to cache (large files, cached on demand)
