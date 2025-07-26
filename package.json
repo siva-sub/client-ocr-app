@@ -1,13 +1,19 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "2.3.1",
+  "version": "3.0.1",
   "type": "module",
-  "description": "State-of-the-art browser-based OCR powered by PaddleOCR 3.0 and PP-OCRv5 with ONNX Runtime - 100% client-side text extraction from images and PDFs with intelligent caching, mobile models, PWA support, and preset configurations for various document types",
+  "description": "State-of-the-art browser-based OCR powered by PaddleOCR 3.0 and PP-OCRv5 with ONNX Runtime - Features visual bounding box results display, Mantine-inspired UI, interactive detection selection, 100% client-side text extraction from images and PDFs with intelligent caching, mobile models, PWA support, and preset configurations for various document types",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/siva-sub/client-ocr-app.git"
   },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "bugs": {
     "url": "https://github.com/siva-sub/client-ocr-app/issues"
   },
@@ -47,7 +53,12 @@
     "ocr-cache",
     "mantine-ui",
     "batch-ocr",
-    "table-extraction"
+    "table-extraction",
+    "visual-ocr",
+    "bounding-box",
+    "interactive-ocr",
+    "ocr-visualization",
+    "onnxocr"
   ],
   "scripts": {
     "dev": "vite",

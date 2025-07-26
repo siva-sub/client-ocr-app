@@ -1,64 +1,59 @@
 # Development files
-.github/
-.git/
 node_modules/
-.gitignore
-demo.html
-create-sample-image.html
-download-ppocr-models.sh
-deploy.sh
-
-# Test files
-test-*.html
-test-*.js
-*-test.html
-*-test.js
-local-*.html
-local-*.js
-test-*.png
-test-*.jpg
-tesseract-*.json
-receipt-test.png
-test-document.png
-pdf-ocr-test*.html
-
-# Build files
-vite.config.js
-dist/
-
-# Documentation (keep README and CHANGELOG)
-*.md
-!README.md
-!CHANGELOG.md
-
-# Python scripts
-pdf-extract-kit/
-*.py
-
-# Logs
 *.log
-npm-debug.log*
-
-# IDE
+*.tmp
 .vscode/
 .idea/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary directories
-temp-*/
-temp-onnxocr/
-
-# ONNX Runtime files in root public folder (keep only in assets)
-public/ort*.mjs
-public/ort*.jsep.mjs
-public/ort*.wasm
-public/ort*.jsep.wasm
-
-# Scripts directory (development only)
+# Source files (not needed for npm package)
+src/
+public/
+assets/
+models/
+screenshots/
+test-images/
 scripts/
 
-# Verification scripts
-verify-*.js
+# Build files
+dist-refactored/
+dist-visual/
+vite.config.js
+
+# Test files
+*.test.js
+test-*.html
+test-*.js
+test-*.png
+receipt-test.png
+create-sample-image.html
+demo.html
+local-test-optimize.html
+pdf-ocr-test-local.html
+verify-configs.js
+
+# Scripts
+*.sh
+generate-*.js
+download-*.sh
+
+# Large ONNX runtime files (users should get from CDN)
+ort-*.mjs
+ort-*.wasm
+ort.*.mjs
+pdf.worker.min.js
+
+# Documentation files that aren't needed
+DEPLOYMENT.md
+GITHUB_REPO_SETTINGS.md
+PDF_HIGHLIGHTING_GUIDE.md
+PUBLICATION_SUMMARY.md
+REFACTORING_SUMMARY.md
+TAGS.md
+deployment-info.json
+
+# Other HTML files
+index-*.html
+index.html
+
+# Keep only dist folder for the npm package
+!dist/

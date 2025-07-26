@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2025-01-26
+
+### Changed
+- **Project Cleanup**: Removed all test files, old build directories, and unnecessary scripts
+- **Optimized README**: Created concise, visual-focused documentation
+- **Consolidated Codebase**: Unified to single main index.html and main.js
+- **Removed Legacy Code**: Cleaned up old engine implementations
+
+### Improved
+- Reduced project size by removing duplicate files
+- Better organized source structure
+- Cleaner npm package distribution
+
+## [3.0.0] - 2025-01-26
+
+### Added
+- **Visual OCR Results Display**: Interactive bounding box visualization for PaddleOCR results
+- **Mantine-Inspired UI**: Complete redesign with modern Mantine design system
+- **Interactive Detection Selection**: Click on any text detection to highlight and view details
+- **Three View Modes**: Visual (with bounding boxes), Text Only, and JSON tabs
+- **OnnxOCR Architecture**: Refactored to mirror jingsongliujing/OnnxOCR implementation
+- **Modular Pipeline**: Separated preprocessing, detection, classification, and recognition modules
+- **Enhanced Operators**: Added NormalizeImage, DetResizeForTest, RecResizeImg operators
+- **DB Postprocessing**: Implemented Differentiable Binarization postprocessing
+- **CTC Decoder**: Added proper CTC decoding for recognition results
+- **Responsive Visual Display**: Bounding boxes scale properly with window resizing
+
+### Changed
+- **UI Consolidation**: Removed duplicate PaddleOCR options in engine selection
+- **Model Selection**: Model dropdown now only shows for PaddleOCR (not Tesseract)
+- **Architecture Refactor**: Complete restructure following OnnxOCR patterns
+- **File Organization**: Modular structure with separate files for each processing stage
+- **Results Display**: PaddleOCR now shows visual results by default
+- **Major Version Bump**: Updated to v3.0.0 to reflect significant UI/UX changes
+
+### Fixed
+- Array method error in text-system.js (changed append to push)
+- Import path issues for refactored modules
+- Model selection visibility logic
+
+### Technical Details
+- Implemented TextSystem orchestrator for DET/CLS/REC pipeline
+- Added getRotateCropImage and sortedBoxes utilities
+- Created interactive canvas overlay for detection visualization
+- Added proper OpenCV.js integration for image processing
+
 ## [2.3.0] - 2025-07-26
 
 ### Added
