@@ -10,7 +10,7 @@ import { OPTIMAL_CONFIGS } from './optimal-ocr-configs.js';
 // Configure ONNX Runtime for optimal performance
 // Set WASM paths based on deployment environment
 const isGitHubPages = window.location.hostname.includes('github.io');
-const wasmBasePath = isGitHubPages ? '/client-ocr-app/assets/' : '/public/assets/';
+const wasmBasePath = isGitHubPages ? '/client-ocr-app/assets/' : '/assets/';
 ort.env.wasm.wasmPaths = wasmBasePath;
 ort.env.wasm.numThreads = 1; // Single thread for now to avoid CORS issues
 ort.env.wasm.simd = true;
@@ -107,7 +107,7 @@ export class PPOCRv5EnhancedEngine {
             }
             
             const isGitHubPages = window.location.hostname.includes('github.io');
-            const basePath = isGitHubPages ? '/client-ocr-app/models/' : '/public/models/';
+            const basePath = isGitHubPages ? '/client-ocr-app/models/' : '/models/';
             
             progressCallback?.({ 
                 status: 'loading', 

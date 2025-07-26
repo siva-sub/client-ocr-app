@@ -151,7 +151,7 @@ export class PPOCRv5OnnxEngine {
                 });
             } else if (this.modelName === 'ch_ppocr_server_v2.0') {
                 // Use PP-OCRv4 rec model as fallback for server v2.0
-                const fallbackRecPath = '/public/models/PP-OCRv4/rec/rec.onnx';
+                const fallbackRecPath = `${basePath}/models/PP-OCRv4/rec/rec.onnx`;
                 progressCallback?.('Loading recognition model (fallback)...');
                 this.recSession = await ort.InferenceSession.create(fallbackRecPath, {
                     executionProviders: ['wasm'],

@@ -20,7 +20,7 @@ ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
 export class OnnxOCREngine {
     constructor(options = {}) {
         this.config = {
-            modelPath: options.modelPath || '/public/models/PP-OCRv5',
+            modelPath: options.modelPath || 'models/PP-OCRv5',
             useAngleCls: options.useAngleCls !== false,
             useGPU: options.useGPU || false,
             detLimitSideLen: options.detLimitSideLen || 960,

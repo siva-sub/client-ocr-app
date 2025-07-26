@@ -24,23 +24,23 @@ export class MultiLanguageOCREngine extends PPOCRv5OnnxEngine {
         this.languageModels = {
             'en': {
                 modelName: 'PP-OCRv4_mobile',
-                dict: '/public/models/en_dict.txt'
+                dict: 'models/en_dict.txt'
             },
             'ch': {
                 modelName: 'PP-OCRv5',
-                dict: '/public/models/ppocrv5_dict.txt'
+                dict: 'models/ppocrv5_dict.txt'
             },
             'japan': {
                 modelName: 'PP-OCRv4',
-                dict: '/public/models/japan_dict.txt'
+                dict: 'models/japan_dict.txt'
             },
             'korean': {
                 modelName: 'PP-OCRv4',
-                dict: '/public/models/korean_dict.txt'
+                dict: 'models/korean_dict.txt'
             },
             'multi': {
                 modelName: 'PP-OCRv5',
-                dict: '/public/models/multi_dict.txt'
+                dict: 'models/multi_dict.txt'
             }
         };
         
