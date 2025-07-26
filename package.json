@@ -1,8 +1,8 @@
 {
   "name": "@siva-sub/client-ocr-app",
-  "version": "2.0.1",
+  "version": "2.1.2",
   "type": "module",
-  "description": "Advanced client-side OCR app with PaddleOCR and Tesseract.js - High-performance text extraction from images and PDFs with specialized configurations for documents, receipts, ID cards, and more",
+  "description": "State-of-the-art browser-based OCR powered by PaddleOCR 3.0 and PP-OCRv5 with ONNX Runtime - 100% client-side text extraction from images and PDFs with intelligent caching, mobile models, PWA support, and preset configurations for various document types",
   "homepage": "https://siva-sub.github.io/client-ocr-app",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/siva-sub/client-ocr-app/issues"
   },
-  "author": "Siva Sub <sivasub987@gmail.com>",
+  "author": "Sivasubramanian Ramanathan <hello@sivasub.com>",
   "license": "MIT",
   "keywords": [
     "ocr",
@@ -19,8 +19,11 @@
     "tesseract",
     "tesseract.js",
     "paddleocr",
+    "ppocr",
+    "pp-ocr-v5",
     "onnx",
     "onnxruntime",
+    "onnxruntime-web",
     "client-side",
     "browser",
     "text-extraction",
@@ -32,7 +35,19 @@
     "id-card-ocr",
     "thermal-receipt",
     "webgl",
-    "wasm"
+    "wasm",
+    "pwa",
+    "progressive-web-app",
+    "offline-ocr",
+    "mobile-ocr",
+    "angle-classification",
+    "text-detection",
+    "text-recognition",
+    "store2",
+    "ocr-cache",
+    "mantine-ui",
+    "batch-ocr",
+    "table-extraction"
   ],
   "scripts": {
     "dev": "vite",
@@ -41,9 +56,15 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "@mantine/core": "^8.2.1",
+    "@mantine/dropzone": "^8.2.1",
+    "@mantine/hooks": "^8.2.1",
+    "@mantine/notifications": "^8.2.1",
+    "@techstark/opencv-js": "^4.11.0-release.1",
     "canvas": "^3.1.2",
     "onnxruntime-web": "^1.22.0",
     "pdfjs-dist": "^3.11.174",
+    "store2": "^2.14.4",
     "tesseract.js": "^5.0.4"
   },
   "devDependencies": {

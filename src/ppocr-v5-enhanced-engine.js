@@ -8,7 +8,10 @@ import * as ort from 'onnxruntime-web';
 import { OPTIMAL_CONFIGS } from './optimal-ocr-configs.js';
 
 // Configure ONNX Runtime for optimal performance
-ort.env.wasm.wasmPaths = '/client-ocr-app/';
+// Set WASM paths based on deployment environment
+const isGitHubPages = window.location.hostname.includes('github.io');
+const wasmBasePath = isGitHubPages ? '/client-ocr-app/assets/' : '/public/assets/';
+ort.env.wasm.wasmPaths = wasmBasePath;
 ort.env.wasm.numThreads = 1; // Single thread for now to avoid CORS issues
 ort.env.wasm.simd = true;
 ort.env.webgl.pack = false; // Disable WebGL packing for stability
@@ -103,7 +106,8 @@ export class PPOCRv5EnhancedEngine {
                 throw new Error(`Unknown model: ${this.modelName}`);
             }
             
-            const basePath = '/client-ocr-app/models/';
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            const basePath = isGitHubPages ? '/client-ocr-app/models/' : '/public/models/';
             
             progressCallback?.({ 
                 status: 'loading', 

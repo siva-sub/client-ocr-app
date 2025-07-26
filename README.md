@@ -1,30 +1,105 @@
-# Client-Side OCR Web Application
+# 🔍 Smart OCR - Advanced Client-Side Text Recognition
 
-Advanced browser-based OCR application with PaddleOCR and Tesseract.js featuring optimized configurations that outperform baseline OCR by up to 80%. Extract text from images and PDFs directly in your browser with specialized settings for documents, receipts, ID cards, and more.
+<div align="center">
 
-🔗 **Live Demo**: [https://siva-sub.github.io/client-ocr-app](https://siva-sub.github.io/client-ocr-app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Now-blue?style=for-the-badge&logo=github)](https://siva-sub.github.io/client-ocr-app)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge&logo=pwa)](https://siva-sub.github.io/client-ocr-app)
 
-## Features
+**State-of-the-art browser-based OCR powered by PaddleOCR 3.0 and ONNX Runtime**
+
+Extract text from images and PDFs directly in your browser with 100% privacy - no server uploads, no data collection.
+
+[**Try Live Demo →**](https://siva-sub.github.io/client-ocr-app)
+
+</div>
+
+---
+
+## ✨ Key Highlights
+
+<table>
+<tr>
+<td align="center" width="33%">
+<img src="https://img.icons8.com/fluency/96/000000/privacy.png" width="60" height="60">
+<h4>100% Private</h4>
+<p>No server uploads<br>Your data stays local</p>
+</td>
+<td align="center" width="33%">
+<img src="https://img.icons8.com/fluency/96/000000/artificial-intelligence.png" width="60" height="60">
+<h4>AI-Powered</h4>
+<p>PaddleOCR 3.0 models<br>State-of-the-art accuracy</p>
+</td>
+<td align="center" width="33%">
+<img src="https://img.icons8.com/fluency/96/000000/rocket.png" width="60" height="60">
+<h4>Lightning Fast</h4>
+<p>WebGL acceleration<br>Intelligent caching</p>
+</td>
+</tr>
+</table>
+
+## 📋 Features
 
 - 🚀 **100% Client-Side**: All processing happens in your browser using WebAssembly
 - 🔒 **Privacy-First**: Your images and PDFs never leave your device
-- ⚡ **Optimized Configurations**: Pre-tuned settings that outperform baseline OCR
-  - General Documents: 15-25% faster, 10-20% better accuracy
-  - Infographics: 40-60% better accuracy, 50-70% more character detection
-  - Official Documents: 25-35% better accuracy
-  - Receipts: 60-80% better accuracy (specialized for thermal prints)
-  - PDFs: 20-30% better accuracy with structure preservation
-  - ID Cards: 35-50% better accuracy
-- 🔄 **Dual OCR Engines**: 
-  - **PaddleOCR v5 Improved**: Enhanced with advanced preprocessing and optimized parameters
-  - **Tesseract.js**: Mature, accurate OCR engine for baseline comparison
-- 📄 **PDF Support**: Full PDF.js integration with search and highlight capabilities
-- 🖼️ **Advanced Preprocessing**: Contrast enhancement, sharpening, denoising, thermal print recovery
-- 🎯 **Document-Specific Modes**: Automatic optimization based on document type
-- 💾 **Export Options**: Copy text, download as file, or integrate with react-pdf-highlighter
-- 📊 **Performance Metrics**: Real-time comparison between engines
+- ⚡ **Multiple Model Options**: 
+  - **Server Models**: PP-OCRv5, PP-OCRv4, Server v2.0 (Higher accuracy)
+  - **Mobile Models**: PP-OCRv5 Mobile, PP-OCRv4 Mobile (Faster processing)
+- 🎯 **Smart Presets**: Pre-configured settings for different use cases
+  - **Balanced**: Default settings for general use
+  - **High Accuracy**: Maximum precision for important documents
+  - **Fast Processing**: Optimized for speed
+  - **Handwritten**: Tuned for handwritten text recognition
+  - **Low Quality**: Enhanced for poor quality images
+- 🔄 **Multiple OCR Engines**: 
+  - **PP-OCRv5 Enhanced**: State-of-the-art with OnnxOCR preprocessing/postprocessing
+  - **PaddleOCR Classic**: Original implementation with optimizations
+  - **Tesseract.js**: Mature OCR engine for baseline comparison
+- 📱 **Progressive Web App**: 
+  - Installable on desktop and mobile
+  - Works offline after initial load
+  - Automatic updates
+- 💾 **Intelligent Caching**: Store2-powered result caching for instant re-processing
+- 🖼️ **Advanced Features**:
+  - Angle classification for rotated text
+  - Multi-language support (English, Chinese, Japanese, Korean)
+  - Batch processing with progress tracking
+  - Table detection and extraction
+  - Structured data extraction (emails, phones, dates, amounts)
+- 📄 **PDF Support**: Full PDF.js integration with multi-page processing
+- 🎨 **Modern UI**: Clean, responsive Mantine-inspired interface with dark theme
+- 📊 **Export Options**: JSON, CSV, TXT, ZIP for batch results
 
-## Technology Stack
+## 🚀 Quick Start
+
+### Use Online (Recommended)
+
+Visit [https://siva-sub.github.io/client-ocr-app](https://siva-sub.github.io/client-ocr-app) - no installation required!
+
+### Install as PWA
+
+1. Visit the [live demo](https://siva-sub.github.io/client-ocr-app)
+2. Click the install button in your browser's address bar
+3. Use offline anytime!
+
+### Run Locally
+
+```bash
+# Clone the repository
+git clone https://github.com/siva-sub/client-ocr-app.git
+cd client-ocr-app
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## 💻 Technology Stack
 
 - **PaddleOCR v5**: State-of-the-art OCR with mobile models via ONNX Runtime
 - **Tesseract.js**: Mature OCR engine for baseline comparison
@@ -110,14 +185,27 @@ The `dist` folder contains static files that can be deployed to any static hosti
 - AWS S3
 - Cloudflare Pages
 
-## Usage
+## 📖 How to Use
 
-1. **Upload a File**: Click the upload area or drag and drop an image/PDF
-2. **Select OCR Engine**: Choose between PaddleOCR (optimized) or Tesseract
-3. **Select Configuration** (PaddleOCR only): Choose document type for best results
-4. **Process**: Click "Extract Text" to run OCR
-5. **View Results**: See extracted text with confidence scores
-6. **Export**: Copy the text or download as a .txt file
+### 1️⃣ Upload Files
+- **Drag & Drop**: Simply drag files onto the upload area
+- **Click to Browse**: Click the upload area to select files
+- **Batch Processing**: Upload multiple files at once
+
+### 2️⃣ Configure Settings
+- **OCR Engine**: Choose between PP-OCRv5 Enhanced, PaddleOCR, or Tesseract
+- **Model Version**: Select server models (accurate) or mobile models (fast)
+- **Preset**: Pick a configuration preset or customize settings
+
+### 3️⃣ Process & Export
+- Click **"Process Images"** to start OCR
+- Watch real-time progress for each file
+- **Copy** individual results or **Download All** as ZIP
+
+### 📱 Mobile Tips
+- Install as PWA for best performance
+- Use mobile models for faster processing
+- Enable caching to save bandwidth
 
 ## Optimized Configurations
 
@@ -146,15 +234,26 @@ The `dist` folder contains static files that can be deployed to any static hosti
 - **Improvements**: 20-30% better accuracy
 - **Features**: Structure preservation, column detection, watermark removal
 
-## Supported File Formats
+## 📊 Model Comparison
+
+| Model | Accuracy | Speed | Size | Best For |
+|-------|----------|-------|------|----------|
+| **PP-OCRv5** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 12MB | Latest features, best overall |
+| **PP-OCRv5 Mobile** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 8MB | Mobile devices, fast processing |
+| **PP-OCRv4** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 11MB | Stable, well-tested |
+| **Server v2.0** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 15MB | Maximum accuracy |
+| **Tesseract.js** | ⭐⭐⭐ | ⭐⭐ | 15MB+ | Baseline comparison |
+
+## 📁 Supported File Formats
 
 ### Images
-- JPEG/JPG
-- PNG
-- WebP
+- **JPEG/JPG** - Photos and scanned documents
+- **PNG** - Screenshots and digital images  
+- **WebP** - Modern web images
 
 ### Documents
-- PDF (multi-page support)
+- **PDF** - Multi-page support with PDF.js
+- **Batch Processing** - Process multiple files at once
 
 ## How It Works
 
@@ -262,7 +361,7 @@ const CONFIG = {
 };
 ```
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -273,6 +372,28 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Test on multiple browsers
 4. Follow existing code style
 5. Update documentation for new features
+
+### How to Contribute
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 💬 Support & Contact
+
+- **Issues**: [GitHub Issues](https://github.com/siva-sub/client-ocr-app/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/siva-sub/client-ocr-app/discussions)
+- **Email**: [hello@sivasub.com](mailto:hello@sivasub.com)
+- **Twitter/X**: Follow development updates with #SmartOCR
+
+## ⭐ Show Your Support
+
+If you find this project useful, please consider:
+- Giving it a ⭐ on [GitHub](https://github.com/siva-sub/client-ocr-app)
+- Sharing it with others who might benefit
+- Contributing to make it even better
 
 ## Troubleshooting
 
@@ -313,22 +434,48 @@ MIT License - see LICENSE file for details
 
 ## Author
 
-**Siva Sub**
-- GitHub: [@siva-sub](https://github.com/siva-sub)
-- LinkedIn: [sivasub987](https://www.linkedin.com/in/sivasub987)
+**Sivasubramanian Ramanathan**
+- 📧 Email: [hello@sivasub.com](mailto:hello@sivasub.com)
+- 🐙 GitHub: [siva-sub](https://github.com/siva-sub)
+- 💼 LinkedIn: [sivasub987](https://www.linkedin.com/in/sivasub987)
+- 🌐 Website: [sivasub.com](https://sivasub.com)
 
-## Acknowledgments
+## References and Technologies Used
 
-- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for the amazing OCR models
-- **Special thanks to [SWHL's PaddleOCR Model Converter](https://huggingface.co/spaces/SWHL/PaddleOCRModelConverter)** for the excellent tool that enabled converting PP-OCRv5 server models to ONNX format
-- [ONNX Runtime](https://onnxruntime.ai/) for WebAssembly inference
-- [PT-Perkasa-Pilar-Utama](https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr) for preprocessing implementations
-- [RapidOCR](https://github.com/RapidAI/RapidOCR) for optimization techniques
-- [PDF.js](https://mozilla.github.io/pdf.js/) for PDF rendering
-- [Vite](https://vitejs.dev/) for the blazing fast build tool
+### Core OCR Technologies
+- **[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)**: State-of-the-art OCR models including PP-OCRv5, PP-OCRv4 - Used for text detection and recognition
+- **[OnnxOCR](https://github.com/jingsongliujing/OnnxOCR)**: ONNX implementation of PaddleOCR models - Provided exact preprocessing/postprocessing pipeline implementations
+- **[Tesseract.js](https://tesseract.projectnaptha.com/)**: JavaScript port of Tesseract OCR engine - Used as baseline comparison engine
 
-## References
+### Model Conversion & Runtime
+- **[SWHL's PaddleOCR Model Converter](https://huggingface.co/spaces/SWHL/PaddleOCRModelConverter)**: Tool for converting PaddleOCR models to ONNX format
+- **[ONNX Runtime Web](https://onnxruntime.ai/)**: High-performance inference in the browser with WebGL/WASM acceleration
+- **[Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX)**: Official tool for converting PaddlePaddle models to ONNX
 
+### Document Processing
+- **[PDF.js](https://mozilla.github.io/pdf.js/)**: Mozilla's PDF rendering and text extraction library
+- **[PDF-Extract-Kit](https://github.com/opendatalab/PDF-Extract-Kit)**: Advanced PDF processing tools for layout analysis
+
+### Web Technologies
+- **[Store2](https://github.com/nbubna/store)**: Cross-browser local storage with namespace support - Used for intelligent OCR result caching
+- **[Mantine UI](https://mantine.dev/)**: Modern React components - Design inspiration for clean, responsive UI
+- **[Vite](https://vitejs.dev/)**: Lightning fast build tool for modern web development
+- **Progressive Web App (PWA)**: Implemented with service workers for offline capability and installability
+
+### Preprocessing & Optimization References
+- **[PT-Perkasa-Pilar-Utama](https://github.com/PT-Perkasa-Pilar-Utama/ppu-paddle-ocr)**: Reference preprocessing implementations
+- **[RapidOCR](https://github.com/RapidAI/RapidOCR)**: Optimization techniques for faster OCR processing
+- **[PaddleOCR Web Demo](https://github.com/PaddlePaddle/PaddleOCR/tree/release/2.7/deploy/paddlejs)**: Official web deployment examples
+
+### Academic Papers & Documentation
+- [PaddleOCR 3.0: Technical Report (Latest)](https://arxiv.org/abs/2507.05595) - The most recent technical report from the PaddleOCR team
+- [PP-OCRv5: On the Exploration of High-Performance Optical Character Recognition](https://arxiv.org/abs/2206.03001)
+- [PP-OCRv4: More Attempts for Scene Text Detection and Recognition](https://arxiv.org/abs/2206.02002)
 - [PaddleOCR Documentation](https://paddlepaddle.github.io/PaddleOCR/)
 - [ONNX Runtime Web Documentation](https://onnxruntime.ai/docs/get-started/with-javascript.html)
-- [PP-OCRv5 Paper](https://arxiv.org/abs/2206.03001)
+- [DBNet: Real-time Scene Text Detection with Differentiable Binarization](https://arxiv.org/abs/1911.08947)
+- [SVTR: Scene Text Recognition with a Single Visual Model](https://arxiv.org/abs/2205.00159)
+
+## Special Acknowledgments
+
+This project builds upon the excellent work of the PaddleOCR team and the OnnxOCR implementation by jingsongliujing. The exact preprocessing and postprocessing pipelines from OnnxOCR were instrumental in achieving high accuracy in the browser environment.

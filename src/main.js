@@ -1,6 +1,7 @@
 import { ppOCRImprovedEngine } from './ppocr-improved-engine.js';
 import { ppOCREngine } from './ppocr-onnx-engine.js';
 import { ppOCRv5Engine } from './ppocr-v5-enhanced-engine.js';
+import { ppOCRv5OnnxEngine } from './ppocr-v5-onnx-engine.js';
 import { tesseractOCREngine } from './tesseract-ocr-engine.js';
 import { INFOGRAPHIC_OCR_CONFIG, updatePaddleOCRConfig } from './infographic-ocr-config.js';
 import { DOCUMENT_OCR_CONFIG, updatePaddleOCRForDocuments, extractReceiptFields } from './document-ocr-config.js';
